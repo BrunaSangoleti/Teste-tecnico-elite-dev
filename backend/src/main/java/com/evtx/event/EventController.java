@@ -31,21 +31,24 @@ public class EventController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     ) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return eventService.search(search, city, from, to)
+                .stream()
+                .map(EventResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
     public EventResponse getById(@PathVariable UUID id) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return EventResponse.from(eventService.getById(id));
     }
 
     @GetMapping("/mine")
     @PreAuthorize("hasRole('ORGANIZADOR')")
     public List<EventResponse> findMine(@AuthenticationPrincipal SecurityUser organizer) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return eventService.findMine(organizer.getId())
+                .stream()
+                .map(EventResponse::from)
+                .toList();
     }
 
     @PostMapping
@@ -55,7 +58,6 @@ public class EventController {
             @Valid @RequestBody EventCreateRequest request,
             @AuthenticationPrincipal SecurityUser organizer
     ) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return EventResponse.from(eventService.create(request, organizer));
     }
 }

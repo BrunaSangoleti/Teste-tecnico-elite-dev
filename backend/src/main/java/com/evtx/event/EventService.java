@@ -1,9 +1,14 @@
 package com.evtx.event;
 
-import com.evtx.security.SecurityUser;
 import com.evtx.event.dto.EventCreateRequest;
+import com.evtx.security.SecurityUser;
+import com.evtx.shared.exception.ForbiddenActionException;
+import com.evtx.shared.exception.ResourceNotFoundException;
+import com.evtx.user.User;
+import com.evtx.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,29 +19,45 @@ import java.util.UUID;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final UserService userService;
 
     public List<Event> search(String query, String city, LocalDateTime from, LocalDateTime to) {
-        // TODO: implement event search with filters
-        throw new UnsupportedOperationException("TODO");
+        return eventRepository.search(query, city, from, to);
     }
 
     public Event getById(UUID id) {
-        // TODO: fetch event by id or throw ResourceNotFoundException
-        throw new UnsupportedOperationException("TODO");
+        return eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + id));
     }
 
     public List<Event> findMine(UUID organizerId) {
-        // TODO: return all events owned by the given organizer
-        throw new UnsupportedOperationException("TODO");
+        return eventRepository.findByOrganizerId(organizerId);
     }
 
+    @Transactional
     public Event create(EventCreateRequest request, SecurityUser organizer) {
-        // TODO: build and persist a new Event from the request payload
-        throw new UnsupportedOperationException("TODO");
+        User organizerUser = userService.getById(organizer.getId());
+
+        Event event = Event.builder()
+                .title(request.title())
+                .description(request.description())
+                .externalRefId(request.externalRefId())
+                .externalSource(ExternalSource.MANUAL)
+                .venueName(request.venueName())
+                .venueAddress(request.venueAddress())
+                .eventDate(request.eventDate())
+                .capacity(request.capacity())
+                .price(request.price())
+                .seatMapEnabled(request.seatMapEnabled())
+                .organizer(organizerUser)
+                .build();
+
+        return eventRepository.save(event);
     }
 
     public void assertOwnership(Event event, UUID organizerId) {
-        // TODO: throw ForbiddenActionException if event does not belong to organizerId
-        throw new UnsupportedOperationException("TODO");
+        if (!event.getOrganizer().getId().equals(organizerId)) {
+            throw new ForbiddenActionException("You do not own this event");
+        }
     }
 }

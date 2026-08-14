@@ -12,22 +12,25 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
 
     List<Event> findByOrganizerId(UUID organizerId);
 
-    @Query("""
-            SELECT e FROM Event e
-            WHERE e.status = 'PUBLISHED'
-              AND (:city IS NULL OR LOWER(e.venueAddress) LIKE LOWER(CONCAT('%', :city, '%')))
-              AND (:from IS NULL OR e.eventDate >= :from)
-              AND (:to IS NULL OR e.eventDate <= :to)
-              AND (:search IS NULL OR LOWER(e.title) LIKE LOWER(CONCAT('%', :search, '%')))
-            ORDER BY e.eventDate ASC
-            """)
+    @Query(value = """
+        SELECT * FROM events
+        WHERE status = 'PUBLISHED'
+          AND (cast(:city as varchar) IS NULL
+               OR LOWER(venue_address) LIKE LOWER(CONCAT('%', :city, '%')))
+          AND (cast(:from_dt as timestamp) IS NULL
+               OR event_date >= cast(:from_dt as timestamp))
+          AND (cast(:to_dt as timestamp) IS NULL
+               OR event_date <= cast(:to_dt as timestamp))
+          AND (cast(:search as varchar) IS NULL
+               OR LOWER(title) LIKE LOWER(CONCAT('%', :search, '%')))
+        ORDER BY event_date ASC
+        """, nativeQuery = true)
     List<Event> search(
             @Param("search") String search,
             @Param("city") String city,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
+            @Param("from_dt") LocalDateTime from,
+            @Param("to_dt") LocalDateTime to
     );
-
     /**
      * Update atômico e condicional: só incrementa se ainda houver capacidade.
      * rowsAffected == 0 => sem estoque (usar no modo "pista").
