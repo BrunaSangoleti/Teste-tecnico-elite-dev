@@ -1,0 +1,75 @@
+# ==========================================
+# FRONT-END (React / TypeScript)
+# ==========================================
+# Dependências do Node
+node_modules/
+
+# Pastas de build de produção
+build/
+dist/
+
+# Logs de depuração do NPM/Yarn/PNPM
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Cache de compilação do TypeScript
+.tsbuildinfo
+
+# ==========================================
+# BACK-END (Java / Spring Boot)
+# ==========================================
+# Pastas de build do Maven / Gradle
+target/
+build/
+bin/
+out/
+
+# Arquivos compilados do Java
+*.class
+
+# Logs de execução do Spring
+*.log
+
+# ==========================================
+# VARIÁVEIS DE AMBIENTE E CREDENCIAIS
+# ==========================================
+# NUNCA suba suas credenciais do Oracle SQL ou chaves de API
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==========================================
+# IDEs E FERRAMENTAS DE DESENVOLVIMENTO
+# ==========================================
+# Eclipse / Spring Tool Suite (STS)
+.metadata/
+.settings/
+*.classpath
+*.project
+*.factorypath
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# ==========================================
+# SISTEMA OPERACIONAL (Arquivos temporários)
+# ==========================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
