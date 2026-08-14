@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:evtx;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+app:
+  jwt:
+    secret: chave-de-teste-apenas-para-execucao-dos-testes-1234567890
+    expiration-minutes: 60
+  catalog:
+    ticketmaster:
+      api-key: test-key
+      base-url: https://app.ticketmaster.com/discovery/v2

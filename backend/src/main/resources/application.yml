@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: evtx-backend
+  profiles:
+    active: dev
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+springdoc:
+  swagger-ui:
+    path: /docs
+
+app:
+  jwt:
+    # NUNCA versionar segredo real de produção. Este valor é só para dev/local.
+    secret: ${JWT_SECRET:troque-este-segredo-em-producao-min-32-bytes-1234567890}
+    expiration-minutes: 120
+  catalog:
+    ticketmaster:
+      api-key: ${TICKETMASTER_API_KEY:}
+      base-url: https://app.ticketmaster.com/discovery/v2
