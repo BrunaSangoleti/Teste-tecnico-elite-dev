@@ -1,11 +1,14 @@
 package com.evtx.ticket;
 
+import com.evtx.event.Seat;
 import com.evtx.reservation.Reservation;
+import com.evtx.shared.exception.ResourceNotFoundException;
 import com.evtx.ticket.dto.ValidateTicketResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,40 +19,71 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final QrCodeService qrCodeService;
 
-    /**
-     * Called by PaymentService after payment approval.
-     * Issues one ticket per seat (seat-map mode) or one per quantity unit (general-admission mode).
-     * Each ticket is individually validatable at the gate.
-     */
     @Transactional
     public List<Ticket> issueTicketsFor(Reservation reservation) {
-        // TODO: generate signed QR token for each ticket and persist
-        throw new UnsupportedOperationException("TODO");
+        List<Ticket> tickets = new ArrayList<>();
+        String ownerName = reservation.getClient().getName();
+
+        if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled())) {
+            // Modo mapa: um ingresso por assento
+            for (Seat seat : reservation.getSeats()) {
+                tickets.add(buildAndSave(reservation, seat, ownerName));
+            }
+        } else {
+            // Modo pista: um ingresso por unidade
+            for (int i = 0; i < reservation.getQuantity(); i++) {
+                tickets.add(buildAndSave(reservation, null, ownerName));
+            }
+        }
+
+        return tickets;
     }
 
+    @Transactional(readOnly = true)
     public List<Ticket> findMine(UUID clientId) {
-        // TODO: return all tickets belonging to the given client
-        throw new UnsupportedOperationException("TODO");
+        return ticketRepository.findByReservationClientId(clientId);
     }
 
+    @Transactional(readOnly = true)
     public Ticket getByShareToken(String shareToken) {
-        // TODO: fetch ticket by public share token or throw ResourceNotFoundException
-        throw new UnsupportedOperationException("TODO");
+        return ticketRepository.findByShareToken(shareToken)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
     }
 
+    @Transactional(readOnly = true)
     public byte[] getQrImage(UUID ticketId) {
-        // TODO: generate and return the QR code image as PNG bytes
-        throw new UnsupportedOperationException("TODO");
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + ticketId));
+        return qrCodeService.generateQrImage(ticket.getQrToken());
     }
 
     /**
-     * Validates a ticket at the gate. Returns one of four outcomes required by the challenge:
-     * VALID, INVALID (bad or forged QR), ALREADY_USED, WRONG_EVENT.
-     * Uses a conditional atomic update (tryMarkAsUsed) to prevent double-validation under concurrency.
+     * Implementado no Passo 10.
+     * Outcomes: VALIDO | INVALIDO | JA_UTILIZADO | EVENTO_ERRADO
      */
     @Transactional
     public ValidateTicketResponse validate(String code, UUID eventId) {
-        // TODO: verify HMAC signature, check event match, attempt atomic status update
-        throw new UnsupportedOperationException("TODO");
+        throw new UnsupportedOperationException("TODO - Passo 10");
+    }
+
+    // ── helper ───────────────────────────────────────────────────────────────
+
+    private Ticket buildAndSave(Reservation reservation, Seat seat, String ownerName) {
+        // Gera ID antes para assinar o token
+        UUID ticketId = UUID.randomUUID();
+        String qrToken = qrCodeService.generateToken(ticketId, reservation.getEvent().getId());
+        String shareToken = UUID.randomUUID().toString().replace("-", "");
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .reservation(reservation)
+                .event(reservation.getEvent())
+                .seat(seat)
+                .ownerName(ownerName)
+                .qrToken(qrToken)
+                .shareToken(shareToken)
+                .build();
+
+        return ticketRepository.save(ticket);
     }
 }

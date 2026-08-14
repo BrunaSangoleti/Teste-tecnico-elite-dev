@@ -24,7 +24,6 @@ public class PaymentController {
             @PathVariable UUID reservationId,
             @Valid @RequestBody PaymentRequest request
     ) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return paymentService.pay(reservationId, request);
     }
 }

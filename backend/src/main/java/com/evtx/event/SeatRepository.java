@@ -14,10 +14,21 @@ public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
     List<Seat> findByEventIdAndStatus(UUID eventId, SeatStatus status);
 
-
     @Modifying
     @Query(value = "UPDATE seats SET status = 'RESERVED', version = version + 1 " +
             "WHERE id = :seatId AND status = 'AVAILABLE'",
             nativeQuery = true)
     int tryReserveSeat(@Param("seatId") UUID seatId);
+
+    @Modifying
+    @Query(value = "UPDATE seats SET status = 'SOLD', version = version + 1 " +
+            "WHERE id = :seatId AND status = 'RESERVED'",
+            nativeQuery = true)
+    int markAsSold(@Param("seatId") UUID seatId);
+
+    @Modifying
+    @Query(value = "UPDATE seats SET status = 'AVAILABLE', version = version + 1 " +
+            "WHERE id = :seatId AND status = 'RESERVED'",
+            nativeQuery = true)
+    int releaseReservation(@Param("seatId") UUID seatId);
 }

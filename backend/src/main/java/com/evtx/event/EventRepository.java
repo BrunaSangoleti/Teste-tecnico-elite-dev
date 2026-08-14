@@ -1,6 +1,7 @@
 package com.evtx.event;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,14 +32,16 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             @Param("from_dt") LocalDateTime from,
             @Param("to_dt") LocalDateTime to
     );
-    /**
-     * Update atômico e condicional: só incrementa se ainda houver capacidade.
-     * rowsAffected == 0 => sem estoque (usar no modo "pista").
-     */
+
     @org.springframework.data.jpa.repository.Modifying
     @Query("""
             UPDATE Event e SET e.soldCount = e.soldCount + :qty
             WHERE e.id = :eventId AND e.soldCount + :qty <= e.capacity
             """)
     int tryReserveQuantity(@Param("eventId") UUID eventId, @Param("qty") int qty);
+
+    @Modifying
+    @Query("UPDATE Event e SET e.soldCount = e.soldCount - :qty " +
+            "WHERE e.id = :eventId AND e.soldCount >= :qty")
+    int releaseQuantity(@Param("eventId") UUID eventId, @Param("qty") int qty);
 }
