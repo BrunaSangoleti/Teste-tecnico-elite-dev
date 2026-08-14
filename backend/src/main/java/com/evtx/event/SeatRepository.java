@@ -14,11 +14,10 @@ public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
     List<Seat> findByEventIdAndStatus(UUID eventId, SeatStatus status);
 
-    /**
-     * Update atômico e condicional: só marca como RESERVED se ainda estiver AVAILABLE.
-     * rowsAffected == 0 => assento já não está mais disponível (outro cliente chegou primeiro).
-     */
+
     @Modifying
-    @Query("UPDATE Seat s SET s.status = 'RESERVED' WHERE s.id = :seatId AND s.status = 'AVAILABLE'")
+    @Query(value = "UPDATE seats SET status = 'RESERVED', version = version + 1 " +
+            "WHERE id = :seatId AND status = 'AVAILABLE'",
+            nativeQuery = true)
     int tryReserveSeat(@Param("seatId") UUID seatId);
 }

@@ -28,13 +28,14 @@ public class ReservationController {
             @Valid @RequestBody ReservationCreateRequest request,
             @AuthenticationPrincipal SecurityUser client
     ) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return ReservationResponse.from(reservationService.create(request, client));
     }
 
     @GetMapping("/mine")
     public List<ReservationResponse> findMine(@AuthenticationPrincipal SecurityUser client) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return reservationService.findMine(client.getId())
+                .stream()
+                .map(ReservationResponse::from)
+                .toList();
     }
 }

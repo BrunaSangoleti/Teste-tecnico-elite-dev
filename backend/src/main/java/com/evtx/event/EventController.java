@@ -23,6 +23,9 @@ import java.util.UUID;
 public class EventController {
 
     private final EventService eventService;
+    private final SeatRepository seatRepository;
+
+    public record SeatSummary(UUID id, String row, Integer number, String sector, String status) {}
 
     @GetMapping
     public List<EventResponse> search(
@@ -40,6 +43,20 @@ public class EventController {
     @GetMapping("/{id}")
     public EventResponse getById(@PathVariable UUID id) {
         return EventResponse.from(eventService.getById(id));
+    }
+
+    @GetMapping("/{id}/seats")
+    public List<SeatSummary> getSeats(@PathVariable UUID id) {
+        eventService.getById(id); // valida que o evento existe
+        return seatRepository.findByEventId(id)
+                .stream()
+                .map(s -> new SeatSummary(
+                        s.getId(),
+                        s.getRow(),
+                        s.getNumber(),
+                        s.getSector(),
+                        s.getStatus().name()))
+                .toList();
     }
 
     @GetMapping("/mine")
