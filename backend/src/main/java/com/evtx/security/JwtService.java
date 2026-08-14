@@ -1,5 +1,7 @@
 package com.evtx.security;
 
+
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -7,13 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.util.Date;
 import java.util.UUID;
 
-/**
- * Handles JWT generation and validation.
- * Claims: subject = user email, userId, role.
- * Signing algorithm: HS256 (HMAC-SHA256), key injected via app.jwt.secret.
- */
 @Service
 public class JwtService {
 
@@ -29,22 +27,40 @@ public class JwtService {
     }
 
     public String generateToken(SecurityUser user) {
-        // TODO: build JWT with subject, userId, role claims and expiration
-        throw new UnsupportedOperationException("TODO");
+        long now = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("role", user.getUser().getRole().name())
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + expirationMinutes * 60 * 1000))
+                .signWith(signingKey)
+                .compact();
     }
 
     public String extractEmail(String token) {
-        // TODO: parse claims and return subject
-        throw new UnsupportedOperationException("TODO");
+        return parseClaims(token).getSubject();
     }
 
     public UUID extractUserId(String token) {
-        // TODO: parse claims and return userId as UUID
-        throw new UnsupportedOperationException("TODO");
+        return UUID.fromString(parseClaims(token).get("userId", String.class));
     }
 
     public boolean isValid(String token, String expectedEmail) {
-        // TODO: verify subject matches and token is not expired
-        throw new UnsupportedOperationException("TODO");
+        try {
+            Claims claims = parseClaims(token);
+            return expectedEmail.equals(claims.getSubject())
+                    && claims.getExpiration().after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

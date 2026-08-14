@@ -1,5 +1,7 @@
 package com.evtx.user;
 
+
+
 import com.evtx.security.SecurityUser;
 import com.evtx.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +20,13 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // TODO: fetch user by email and wrap in SecurityUser; throw UsernameNotFoundException if absent
-        throw new UnsupportedOperationException("TODO");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+        return new SecurityUser(user);
     }
 
     public User getById(UUID id) {
-        // TODO: fetch user by id or throw ResourceNotFoundException
-        throw new UnsupportedOperationException("TODO");
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
     }
 }

@@ -1,5 +1,7 @@
 package com.evtx.security;
 
+
+
 import com.evtx.user.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,17 +9,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * JWT authentication filter — runs once per request.
- * Extracts the Bearer token from the Authorization header, verifies its signature,
- * and populates the SecurityContext so downstream components can use @AuthenticationPrincipal.
- * Invalid or expired tokens are silently ignored; protected endpoints will respond with 401/403.
- */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -34,7 +34,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        // TODO: extract token, validate, set SecurityContextHolder authentication
+
+        String authHeader = request.getHeader(HEADER);
+        if (authHeader == null || !authHeader.startsWith(PREFIX)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = authHeader.substring(PREFIX.length());
+
+        try {
+            String email = jwtService.extractEmail(token);
+
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userService.loadUserByUsername(email);
+
+                if (jwtService.isValid(token, email)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            }
+        } catch (Exception ignored) {
+            // Token inválido → requisição segue sem autenticação
+        }
+
         filterChain.doFilter(request, response);
     }
 }
