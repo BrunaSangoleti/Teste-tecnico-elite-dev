@@ -26,28 +26,27 @@ public class TicketController {
     @GetMapping("/mine")
     @PreAuthorize("hasRole('CLIENTE')")
     public List<TicketResponse> findMine(@AuthenticationPrincipal SecurityUser client) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return ticketService.findMine(client.getId())
+                .stream()
+                .map(TicketResponse::from)
+                .toList();
     }
 
     @GetMapping(value = "/{id}/qrcode", produces = MediaType.IMAGE_PNG_VALUE)
     @PreAuthorize("hasRole('CLIENTE')")
     public byte[] getQrImage(@PathVariable UUID id) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return ticketService.getQrImage(id);
     }
 
-    /** Public share link — no authentication required, read-only. */
+    /** Link público — sem login necessário */
     @GetMapping("/shared/{shareToken}")
     public TicketResponse getShared(@PathVariable String shareToken) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return TicketResponse.from(ticketService.getByShareToken(shareToken));
     }
 
     @PostMapping("/validate")
     @PreAuthorize("hasRole('PORTARIA')")
     public ValidateTicketResponse validate(@Valid @RequestBody ValidateTicketRequest request) {
-        // TODO: implement
-        throw new UnsupportedOperationException("TODO");
+        return ticketService.validate(request.code(), request.eventId());
     }
 }
