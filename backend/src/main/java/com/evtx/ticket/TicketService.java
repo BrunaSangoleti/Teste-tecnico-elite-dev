@@ -16,7 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TicketService {
 
-    private final TicketRepository ticketRepository;
+    private final TicketRepository ticketRepository;   // ← corrigido
     private final QrCodeService qrCodeService;
 
     @Transactional
@@ -25,12 +25,10 @@ public class TicketService {
         String ownerName = reservation.getClient().getName();
 
         if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled())) {
-            // Modo mapa: um ingresso por assento
             for (Seat seat : reservation.getSeats()) {
                 tickets.add(buildAndSave(reservation, seat, ownerName));
             }
         } else {
-            // Modo pista: um ingresso por unidade
             for (int i = 0; i < reservation.getQuantity(); i++) {
                 tickets.add(buildAndSave(reservation, null, ownerName));
             }
@@ -57,19 +55,51 @@ public class TicketService {
         return qrCodeService.generateQrImage(ticket.getQrToken());
     }
 
-    /**
-     * Implementado no Passo 10.
-     * Outcomes: VALIDO | INVALIDO | JA_UTILIZADO | EVENTO_ERRADO
-     */
     @Transactional
     public ValidateTicketResponse validate(String code, UUID eventId) {
-        throw new UnsupportedOperationException("TODO - Passo 10");
+
+        // 1. Verifica a assinatura HMAC do QR Token
+        UUID ticketId;
+        try {
+            ticketId = qrCodeService.verifyAndExtractTicketId(code);
+        } catch (IllegalArgumentException e) {
+            return new ValidateTicketResponse("INVALIDO",
+                    "QR Code inválido ou adulterado.");
+        }
+
+        // 2. Busca o ingresso no banco
+        Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
+        if (ticket == null) {
+            return new ValidateTicketResponse("INVALIDO",
+                    "Ingresso não encontrado.");
+        }
+
+        // 3. Verifica se pertence ao evento correto
+        if (!ticket.getEvent().getId().equals(eventId)) {
+            return new ValidateTicketResponse("EVENTO_ERRADO",
+                    "Este ingresso pertence a outro evento.");
+        }
+
+        // 4. Update atômico — evita uso duplo em requisições concorrentes
+        int affected = ticketRepository.tryMarkAsUsed(ticketId);
+        if (affected == 0) {
+            return new ValidateTicketResponse("JA_UTILIZADO",
+                    "Este ingresso já foi utilizado.");
+        }
+
+        // 5. Sucesso
+        String seat = ticket.getSeat() != null
+                ? "Fila " + ticket.getSeat().getRow() + " / Nº " + ticket.getSeat().getNumber()
+                : "Pista Geral";
+
+        return new ValidateTicketResponse("VALIDO",
+                "Entrada liberada! Bem-vindo(a), " + ticket.getOwnerName() +
+                        ". Assento: " + seat);
     }
 
     // ── helper ───────────────────────────────────────────────────────────────
 
     private Ticket buildAndSave(Reservation reservation, Seat seat, String ownerName) {
-        // Gera ID antes para assinar o token
         UUID ticketId = UUID.randomUUID();
         String qrToken = qrCodeService.generateToken(ticketId, reservation.getEvent().getId());
         String shareToken = UUID.randomUUID().toString().replace("-", "");

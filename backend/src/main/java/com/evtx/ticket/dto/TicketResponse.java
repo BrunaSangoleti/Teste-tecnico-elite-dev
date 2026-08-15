@@ -12,6 +12,7 @@ public record TicketResponse(
         String ownerName,
         String status,
         String shareToken,
+        String qrToken,
         Instant usedAt
 ) {
     public static TicketResponse from(Ticket t) {
@@ -22,6 +23,7 @@ public record TicketResponse(
                 t.getOwnerName(),
                 t.getStatus().name(),
                 t.getShareToken(),
+                t.getQrToken(),
                 t.getUsedAt()
         );
     }

@@ -17,11 +17,11 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
 
     /**
      * Update atômico e condicional: só marca como USED se ainda estiver VALID.
-     * rowsAffected == 0 => já foi usado (ou nunca existiu) - trate a diferença
-     * consultando o registro em seguida para dar a mensagem certa (JÁ_UTILIZADO vs INVÁLIDO).
+     * rowsAffected == 0 => já foi usado ou nunca existiu.
      */
     @Modifying
-    @Query("UPDATE Ticket t SET t.status = 'USED', t.usedAt = CURRENT_TIMESTAMP " +
-           "WHERE t.id = :id AND t.status = 'VALID'")
+    @Query(value = "UPDATE tickets SET status = 'USED', used_at = NOW() " +
+            "WHERE id = :id AND status = 'VALID'",
+            nativeQuery = true)
     int tryMarkAsUsed(@Param("id") UUID id);
 }
