@@ -18,3 +18,8 @@ logging:
   level:
     com.evtx: DEBUG
     org.springframework.security: INFO
+
+app:
+  catalog:
+    ticketmaster:
+      api-key: "75qRvvwobHQPckVBi9GeQPdG6RJw6QEH"
