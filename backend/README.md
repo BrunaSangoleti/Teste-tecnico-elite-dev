@@ -1,295 +1,119 @@
-# EVTX Backend — Event & Ticketing Platform
+# EVTX Backend - Desafio Elite Dev
 
-A RESTful backend for an event and ticketing platform, built with **Java 21 + Spring Boot 3.3**.  
-This repository represents the **initial architecture skeleton**: domain structure, database schema, security configuration, and all API endpoint contracts are defined. Business logic is intentionally left as `TODO` stubs — the project is meant to serve as a clean, opinionated starting point for development.
+Este é o backend do sistema **EVTX**, uma plataforma de gerenciamento e venda de ingressos desenvolvida como parte do Desafio Elite Dev. A aplicação fornece uma API RESTful completa para gerenciamento de eventos, reserva de assentos, processamento de pagamentos simulados e validação de ingressos via QR Code.
 
----
+## 🚀 Tecnologias Utilizadas
 
-## Architecture
-
-### Package-by-Feature (Domain-Driven Structure)
-
-The project follows a **package-by-feature** (also known as domain-based or vertical-slice) structure rather than the traditional horizontal layering (`controller/`, `service/`, `repository/`).
-
-```
-com.evtx
-├── catalog/        # External catalog integration (Ticketmaster API)
-├── config/         # Cross-cutting configuration (Security, OpenAPI, HTTP clients)
-├── event/          # Event and Seat domain — entity, repository, service, controller
-├── payment/        # Payment simulation domain
-├── reservation/    # Reservation domain with concurrency-safe stock control
-├── security/       # JWT authentication — filter, service, SecurityUser adapter
-├── shared/         # Shared DTOs and global exception handling
-├── ticket/         # Ticket domain — issuance, QR code, gate validation
-└── user/           # User domain — entity, repository, UserDetailsService
-```
-
-**Why package-by-feature?**
-
-- **Cohesion**: everything related to a domain concept lives together. When you work on `reservation`, you touch only the `reservation/` package.
-- **Scalability**: each package is a natural boundary for future extraction into a separate service (or module) if the application grows.
-- **Readability**: navigating the codebase by intent, not by technical layer — closer to how business stakeholders describe the system.
-- **Avoids cross-cutting coupling**: horizontal layering tends to create services that know too much about unrelated entities. Vertical slices enforce tighter, more explicit dependencies.
-
-This choice was made deliberately over the default `controller/service/repository` structure that Spring Initializr promotes, because the domain model was clear from the start and the team prefers intent-driven navigation.
+- **Java 21** (Compilado para Java 21, compatível com JDK 25)
+- **Spring Boot 3.3.4** (Web, Data JPA, Security, Validation)
+- **PostgreSQL 16** (Banco de dados relacional)
+- **Hibernate 6** (ORM)
+- **Flyway** (Versionamento e migrações de banco de dados)
+- **Docker & Docker Compose** (Infraestrutura local)
+- **JWT (JSON Web Tokens)** (Autenticação e Autorização)
+- **Springdoc OpenAPI / Swagger** (Documentação da API)
+- **Spring RestClient** (Integração com APIs externas - Ticketmaster)
 
 ---
 
-## Technology Choices
+## 🧠 Arquitetura e Decisões Técnicas
 
-### Core Framework
+Durante o desenvolvimento, tomamos decisões arquiteturais focadas em **segurança, escalabilidade e consistência de dados**:
 
-| Technology | Version | Why |
-|---|---|---|
-| **Java** | 21 (LTS) | Latest LTS with virtual threads (Project Loom), modern record syntax, and pattern matching. Chosen for long-term support and modern language features. |
-| **Spring Boot** | 3.3.4 | Convention-over-configuration; minimal boilerplate for production-grade applications. The parent POM manages all dependency versions coherently. |
+### 1. Concorrência e Bloqueio de Assentos (Optimistic Locking & Native SQL)
+Para evitar que dois clientes comprem o mesmo assento simultaneamente (Condição de Corrida / Double-booking), implementamos duas barreiras:
+- **Optimistic Locking (`@Version`):** Garante que a entidade não foi modificada por outra transação entre o `SELECT` e o `UPDATE`.
+- **Native SQL Queries:** Utilizamos queries nativas no `SeatRepository` (`UPDATE seats SET status = 'RESERVED' WHERE id = :id AND status = 'AVAILABLE'`) para garantir que a mudança de estado seja atômica direto no banco de dados, ignorando a memória em cache do ORM.
 
-### Web Layer
+### 2. Autenticação Stateless (JWT) e Controle de Acesso
+A API é 100% *stateless*. Utilizamos JWT para identificar os usuários. As permissões são validadas em nível de rota e método usando `@PreAuthorize`:
+- **ORGANIZADOR:** Pode criar eventos e consultar integrações externas.
+- **CLIENTE:** Pode visualizar eventos, reservar assentos, pagar e visualizar seus ingressos.
+- **PORTARIA:** Focada exclusivamente na validação do ingresso via QR Code.
 
-| Technology | Why |
-|---|---|
-| **Spring Web** (`spring-boot-starter-web`) | Provides the embedded Tomcat server and the full Spring MVC stack for building REST controllers. Zero external server setup needed. |
-| **Spring Validation** (`spring-boot-starter-validation`) | Integrates Bean Validation (Jakarta) directly into controller method parameters via `@Valid`. Reduces repetitive null/range checks in service code and returns structured 400 responses automatically. |
+### 3. Segurança Anti-Fraude nos Ingressos (HMAC-SHA256)
+Os QR Codes não armazenam apenas o ID do ingresso. Eles contêm um payload assinado digitalmente usando **HMAC-SHA256**.
+Isso garante que um usuário mal-intencionado não consiga gerar QR Codes falsos adivinhando UUIDs. Além disso, a validação no banco faz um `UPDATE` atômico verificando se o status atual é `VALID`, evitando que o mesmo ingresso seja usado duas vezes (*Replay Attack*).
 
-### Persistence
+### 4. Geração Manual de UUIDs
+Para contornar comportamentos assíncronos do Hibernate 6 em relação à geração de UUIDs (onde o ORM pode gerar IDs temporários antes do flush real no banco), removemos o `@GeneratedValue` na entidade `Ticket`. Assim, geramos o UUID de forma determinística na camada de serviço, garantindo que a assinatura criptográfica do QR Token corresponda perfeitamente à chave primária do banco.
 
-| Technology | Why |
-|---|---|
-| **Spring Data JPA** (`spring-boot-starter-data-jpa`) | ORM abstraction over Hibernate. Repository interfaces like `JpaRepository` eliminate boilerplate CRUD, while `@Query` with JPQL allows custom queries when needed. The `@Version` annotation enables optimistic locking for concurrency control without external locks. |
-| **PostgreSQL** | Chosen over MySQL for native `UUID` support (`gen_random_uuid()` via `pgcrypto`), robust `CHECK` constraints, and a generous free tier on cloud platforms (Render, Railway). The `soldCount <= capacity` constraint is enforced at the database level — not just the application layer — for true data integrity. |
-| **Flyway** | Database migrations as versioned SQL files tracked in version control. Schema is the source of truth; Hibernate is set to `ddl-auto: validate` (read-only) on purpose. This means the application refuses to start if the schema does not match the entity model — preventing silent drift. |
-
-### Security
-
-| Technology | Why |
-|---|---|
-| **Spring Security** (`spring-boot-starter-security`) | Industry-standard security framework for Spring. Provides `AuthenticationManager`, `UserDetailsService` integration, method-level authorization (`@PreAuthorize`), and stateless session configuration in a few lines of code. |
-| **JJWT** (`jjwt-api` / `jjwt-impl` / `jjwt-jackson`) | The most widely used JWT library for Java. Provides a fluent builder API for token creation and a parser with built-in signature verification. Chosen for its explicit, readable API and active maintenance. The split into `api`/`impl`/`jackson` artifacts follows the library's own recommendation for compile vs runtime scoping. |
-
-**Security design decisions:**
-- **Stateless JWT**: no server-side session storage. Every request is self-contained. Scales horizontally without shared session infrastructure.
-- **Role-based access control**: three roles (`ORGANIZADOR`, `CLIENTE`, `PORTARIA`) enforced at the endpoint level via `@PreAuthorize("hasRole('...')")`.
-- **QR code integrity**: ticket QR codes carry an HMAC-SHA256 signed payload (reusing the JWT secret), not the raw ticket UUID. The gate recomputes the signature at validation time — no database table of "valid tokens" needed, and no forgery without the server secret.
-
-### External Integration
-
-| Technology | Why |
-|---|---|
-| **Spring's `RestClient`** | Modern, fluent HTTP client introduced in Spring 6.1 (replaces `RestTemplate`). Used for Ticketmaster Discovery API calls. Configured as a Spring bean in `ExternalApiConfig` with base URL pre-set. |
-| **Ticketmaster Discovery API** | Chosen as the external event catalog source because its data model (venue name, venue address, event date) maps naturally to the internal `Event` entity. A movie database (e.g., TMDb) was considered but rejected — movies don't carry session venues or start times natively. |
-
-### Other Libraries
-
-| Technology | Why |
-|---|---|
-| **ZXing** (`com.google.zxing`) | Google's widely used, dependency-free QR code generation library. Generates ticket QR images as PNG byte arrays served directly from the API (`produces = IMAGE_PNG_VALUE`). |
-| **SpringDoc OpenAPI** (`springdoc-openapi-starter-webmvc-ui`) | Auto-generates Swagger UI from controller annotations with zero XML configuration. The UI is available at `/docs` in development for easy manual testing. |
-| **Lombok** | Eliminates boilerplate: `@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`, `@RequiredArgsConstructor`. Excluded from the final JAR (compile-time only). |
-
-### Infrastructure
-
-| Technology | Why |
-|---|---|
-| **Docker Compose** | Single command (`docker compose up -d`) spins up a PostgreSQL 16 container with health check. Removes the need for local Postgres installation during development. |
-| **H2 (test scope)** | In-memory database for unit and integration tests only. Never used at runtime. |
+### 5. Tratamento Global de Exceções (ControllerAdvice)
+A aplicação possui um `GlobalExceptionHandler` robusto. Em vez de retornar erros `500` genéricos para o frontend quando campos falham na validação ou quando ocorre um erro de tipagem de URL, a aplicação traduz essas falhas para respostas amigáveis (`400 Bad Request`, `404 Not Found`, `409 Conflict`), incluindo detalhes precisos de onde o erro ocorreu.
 
 ---
 
-## Concurrency Strategy
+## 🤖 Transparência: Uso de Inteligência Artificial e Decisões do Candidato
 
-Two mechanisms prevent double-selling under concurrent requests:
+Atendendo aos requisitos do desafio, detalho abaixo a divisão entre as minhas decisões arquiteturais e o uso de Inteligência Artificial como acelerador de desenvolvimento:
 
-1. **Seat-map mode** — `SeatRepository.tryReserveSeat(seatId)`:  
-   `UPDATE Seat SET status = 'RESERVED' WHERE id = :id AND status = 'AVAILABLE'`  
-   If `rowsAffected == 0`, the seat was already taken. The transaction rolls back all seats atomically — no partial reservations.
+### Minhas Escolhas (Candidato)
+Toda a base tecnológica e arquitetural do projeto partiu das minhas decisões:
+- **Linguagem e Framework:** Escolha do **Java** com o ecossistema **Spring** (Spring Boot, Spring Security, Spring Data JPA) pela sua robustez e padrão de mercado.
+- **Identificadores:** Utilização de **UUIDs gerados pelo próprio Java**, garantindo imprevisibilidade e maior segurança, especialmente em links públicos e validações de QR Code.
+- **Ferramentas de Produtividade e Infra:** Escolha do **Lombok** para manter as classes limpas de boilerplate, e a combinação de **Flyway + Docker** (PostgreSQL) para garantir que qualquer avaliador consiga rodar a aplicação imediatamente sem lidar com scripts manuais.
+- **Arquitetura de Pastas:** Estruturação orientada a domínios/features (ex: `event`, `reservation`, `ticket`, `security`), facilitando a manutenção e a escalabilidade do código.
 
-2. **General-admission mode** — `EventRepository.tryReserveQuantity(eventId, qty)`:  
-   `UPDATE Event SET soldCount = soldCount + :qty WHERE id = :id AND soldCount + :qty <= capacity`  
-   Conditional increment ensures capacity is never exceeded.
-
-3. **Gate validation** — `TicketRepository.tryMarkAsUsed(ticketId)`:  
-   `UPDATE Ticket SET status = 'USED' WHERE id = :id AND status = 'VALID'`  
-   Prevents the same ticket from being validated twice even under concurrent gate scanners.
+### O Papel da Inteligência Artificial
+A IA foi utilizada estritamente como um co-piloto (pair-programming) e acelerador de entregas para maximizar a agilidade e organização do meu trabalho:
+- **Planejamento:** A IA me ajudou a dividir o desafio em um **roteiro estruturado** passo-a-passo.
+- **Boilerplate e Arquitetura Inicial:** Com as minhas escolhas tecnológicas e de pastas definidas, a IA gerou a base do código estrutural (entidades, repositórios e DTOs) de forma rápida.
+- **Troubleshooting e Guia:** Atuou me guiando na resolução de detalhes complexos de framework, como o comportamento interno do Hibernate 6 com validação de UUIDs, mantendo o trabalho contínuo e organizado.
 
 ---
 
-## Getting Started
+## ⚙️ Pré-requisitos
 
-### Prerequisites
+Para rodar o projeto localmente, você precisará de:
+- **JDK 21** ou superior instalado e configurado nas variáveis de ambiente.
+- **Maven** (ou usar a IDE).
+- **Docker Desktop** (ou Docker Engine + Docker Compose) para o banco de dados.
 
-- Java 21+
-- Maven 3.9+
-- Docker (for local Postgres)
+---
 
-### 1. Start the database
+## 🏃 Como Executar o Projeto
 
+### 1. Subir o Banco de Dados (PostgreSQL)
+Na raiz do projeto backend, onde o arquivo `docker-compose.yml` está localizado, abra o terminal e rode:
 ```bash
 docker compose up -d
 ```
+> **Nota:** O PostgreSQL subirá mapeado para a porta **5433** do seu host local para evitar conflitos com instalações locais pré-existentes do Postgres.
 
-This starts PostgreSQL 16 at `localhost:5432`, database `evtx`, user `evtx`, password `evtx`.
-
-### 2. Environment variables (optional in dev)
-
-```bash
-export JWT_SECRET="replace-with-a-strong-secret-at-least-32-bytes"
-export TICKETMASTER_API_KEY="your-key-here"   # only needed for catalog search
-```
-
-If not set, `application.yml` falls back to safe development defaults. **Do not use the defaults in production.**
-
-### 3. Run the application
-
+### 2. Iniciar a Aplicação Spring Boot
+Você pode rodar a aplicação diretamente pela sua IDE (IntelliJ, Eclipse, VSCode) executando a classe principal `EvtxApplication.java`, ou via terminal usando o Maven:
 ```bash
 mvn spring-boot:run
 ```
+> A aplicação iniciará na porta **8081** (ajustado para evitar conflito com painéis Docker no 8080).
 
-The API starts at `http://localhost:8080`.  
-Interactive Swagger UI: `http://localhost:8080/docs`.
-
-### 4. Database migrations
-
-Flyway runs automatically on startup:
-- `V1__init.sql` — creates the full schema
-- `V2__seed_data.sql` — seeds test data
+### 3. Migrations (Flyway)
+Ao rodar o projeto, o Flyway automaticamente criará todas as tabelas (`V1__init.sql`) e inserirá os dados iniciais (`V2__seed_data.sql`), incluindo usuários de teste e eventos predefinidos.
 
 ---
 
-## Project Structure
+## 📚 Documentação da API (Swagger)
 
-```
-evtx-backend/
-├── docker-compose.yml                        # Local development Postgres
-├── lombok.config                             # Lombok: addLombokGeneratedAnnotation = true
-├── pom.xml
-└── src/
-    └── main/
-        ├── java/com/evtx/
-        │   ├── EvtxApplication.java           # Spring Boot entry point
-        │   ├── catalog/
-        │   │   ├── CatalogProvider.java        # Interface — catalog data source contract
-        │   │   ├── TicketmasterClient.java     # Ticketmaster Discovery API client
-        │   │   └── dto/
-        │   │       └── CatalogItemDTO.java
-        │   ├── config/
-        │   │   ├── ExternalApiConfig.java      # RestClient bean for Ticketmaster
-        │   │   ├── OpenApiConfig.java          # Swagger / SpringDoc customization
-        │   │   └── SecurityConfig.java         # Spring Security filter chain + CORS
-        │   ├── event/
-        │   │   ├── Event.java                  # JPA entity
-        │   │   ├── EventController.java        # REST endpoints
-        │   │   ├── EventRepository.java        # JPA repository + custom JPQL queries
-        │   │   ├── EventService.java           # Business logic
-        │   │   ├── EventStatus.java            # Enum: PUBLISHED, CANCELLED
-        │   │   ├── ExternalSource.java         # Enum: TICKETMASTER, MANUAL
-        │   │   ├── Seat.java                   # JPA entity (@Version for optimistic locking)
-        │   │   ├── SeatRepository.java         # Conditional update for seat reservation
-        │   │   ├── SeatStatus.java             # Enum: AVAILABLE, RESERVED, SOLD
-        │   │   └── dto/
-        │   │       ├── EventCreateRequest.java
-        │   │       └── EventResponse.java
-        │   ├── payment/
-        │   │   ├── Payment.java
-        │   │   ├── PaymentController.java
-        │   │   ├── PaymentRepository.java
-        │   │   ├── PaymentService.java         # Simulated gateway (deterministic rule)
-        │   │   ├── PaymentStatus.java          # Enum: APPROVED, DECLINED
-        │   │   └── dto/
-        │   │       ├── PaymentRequest.java
-        │   │       └── PaymentResponse.java
-        │   ├── reservation/
-        │   │   ├── Reservation.java
-        │   │   ├── ReservationController.java
-        │   │   ├── ReservationRepository.java
-        │   │   ├── ReservationService.java     # Core concurrency logic (seat + quantity modes)
-        │   │   ├── ReservationStatus.java      # Enum: PENDING_PAYMENT, CONFIRMED, DECLINED, EXPIRED
-        │   │   └── dto/
-        │   │       ├── ReservationCreateRequest.java
-        │   │       └── ReservationResponse.java
-        │   ├── security/
-        │   │   ├── AuthenticationController.java  # POST /api/auth/login
-        │   │   ├── JwtAuthFilter.java             # OncePerRequestFilter — Bearer token extraction
-        │   │   ├── JwtService.java                # Token generation and validation (JJWT)
-        │   │   ├── SecurityUser.java              # UserDetails adapter wrapping the User entity
-        │   │   └── dto/
-        │   │       ├── LoginRequest.java
-        │   │       └── LoginResponse.java
-        │   ├── shared/
-        │   │   ├── dto/
-        │   │   │   └── ErrorResponse.java          # Standardized error response body
-        │   │   └── exception/
-        │   │       ├── ApiException.java
-        │   │       ├── ConflictException.java
-        │   │       ├── ForbiddenActionException.java
-        │   │       ├── GlobalExceptionHandler.java # @RestControllerAdvice
-        │   │       └── ResourceNotFoundException.java
-        │   ├── ticket/
-        │   │   ├── QrCodeService.java             # HMAC-SHA256 token generation + ZXing rendering
-        │   │   ├── Ticket.java
-        │   │   ├── TicketController.java
-        │   │   ├── TicketRepository.java          # Atomic tryMarkAsUsed query
-        │   │   ├── TicketService.java             # Issuance + gate validation logic
-        │   │   ├── TicketStatus.java              # Enum: VALID, USED, CANCELLED
-        │   │   └── dto/
-        │   │       ├── TicketResponse.java
-        │   │       ├── ValidateTicketRequest.java
-        │   │       └── ValidateTicketResponse.java
-        │   └── user/
-        │       ├── User.java
-        │       ├── UserRepository.java
-        │       ├── UserRole.java                  # Enum: ORGANIZADOR, CLIENTE, PORTARIA
-        │       └── UserService.java               # Implements UserDetailsService
-        └── resources/
-            ├── application.yml                    # Base config (port, Jackson, JWT, Swagger path)
-            ├── application-dev.yml               # Dev overrides (datasource, Flyway, logging)
-            └── db/migration/
-                ├── V1__init.sql                   # Full schema: users, events, seats, reservations, payments, tickets
-                └── V2__seed_data.sql              # Test data: 4 users, 2 events
-```
+Com a aplicação rodando, acesse a interface interativa do Swagger no seu navegador:
+
+🔗 **http://localhost:8081/docs**
+
+Através do Swagger, você pode testar todos os endpoints. 
+**Usuários de teste já cadastrados no banco:**
+- **Organizador:** `organizador@evtx.com` / `senha123`
+- **Cliente:** `cliente1@evtx.com` / `senha123`
+- **Portaria:** `portaria@evtx.com` / `senha123`
+
+Para usar endpoints protegidos no Swagger, faça o login (`POST /api/auth/login`), copie o `token` gerado, clique no botão **Authorize** (cadeado verde no topo) e cole o token.
 
 ---
 
-## API Overview
+## 🔧 Variáveis de Ambiente e Integrações
 
-| Method | Path | Role | Description |
-|--------|------|------|-------------|
-| `POST` | `/api/auth/login` | Public | Authenticate and receive a JWT |
-| `GET` | `/api/events` | Public | List/search published events |
-| `GET` | `/api/events/{id}` | Public | Get event details |
-| `GET` | `/api/events/mine` | ORGANIZADOR | Events owned by the authenticated organizer |
-| `POST` | `/api/events` | ORGANIZADOR | Create a new event |
-| `POST` | `/api/reservations` | CLIENTE | Create a reservation (seat-map or general-admission) |
-| `GET` | `/api/reservations/mine` | CLIENTE | Client's reservations |
-| `POST` | `/api/payments/{reservationId}/pay` | CLIENTE | Process simulated payment |
-| `GET` | `/api/tickets/mine` | CLIENTE | Client's issued tickets |
-| `GET` | `/api/tickets/{id}/qrcode` | CLIENTE | Get QR code image (PNG) |
-| `GET` | `/api/tickets/shared/{shareToken}` | Public | View shared ticket (read-only) |
-| `POST` | `/api/tickets/validate` | PORTARIA | Validate a ticket at the gate |
+A aplicação foi projetada para rodar localmente sem configurações adicionais, mas possui variáveis de ambiente para produção:
+
+- `JWT_SECRET`: Chave secreta usada para assinar os tokens JWT e os QR Codes. Se não fornecida, usa um valor padrão de fallback para dev.
+- `TICKETMASTER_API_KEY`: Para testar a funcionalidade extra de importação de catálogo (Passo 12), adicione sua *Consumer Key* da Ticketmaster no arquivo `application-dev.yml` (seção `app.catalog.ticketmaster.api-key`).
 
 ---
-
-## AI Usage
-
-This project was developed with AI assistance. Here is an honest and transparent breakdown:
-
-**What the AI did:**
-- Provided a structured architecture roadmap: suggested domain package organization, entity modeling, Flyway migration strategy, and JWT filter integration.
-- Generated initial boilerplate for entity classes, repository interfaces, and DTO records based on requirements I described.
-- Suggested the HMAC-SHA256 approach for QR code signing as an alternative to storing tokens in a separate database table.
-- Suggested the conditional `UPDATE` pattern (optimistic concurrency via JPQL) for seat and stock reservation.
-
-**What I decided and why:**
-- **Package-by-feature over horizontal layers**: I chose this after the AI presented both options. I already work with this structure in day-to-day projects and find it easier to navigate.
-- **PostgreSQL over MySQL**: I made this call — I'm already familiar with Postgres and its UUID support (`gen_random_uuid()`) is cleaner.
-- **Ticketmaster over TMDb**: I evaluated both options the AI listed and chose Ticketmaster because its data model (venue + date + event name) maps directly to what an organizer needs to fill in. A movie database doesn't naturally carry session venue or start time.
-- **JJWT over Spring Security OAuth2**: I use JJWT regularly at work; it's straightforward and doesn't pull in an OAuth2 server dependency for a simple stateless JWT use case.
-- **Three roles (ORGANIZADOR, CLIENTE, PORTARIA)**: I defined the roles and their scope. The AI helped translate them into Spring Security configuration.
-- **Simulated payment gateway** (card ending in `0000` = declined): I chose this deterministic rule for simplicity during development — easy to explain, easy to test both paths.
-- **ZXing for QR codes**: I selected this after the AI listed options. It's a well-known Google library I had seen used in production before.
-
-**What remains to be implemented manually:**
-- All `TODO` stubs in service classes
-- Full integration tests
-- Pagination in Ticketmaster client
-- PENDING_PAYMENT reservation expiry (scheduler)
-- Frontend (React)
+Desenvolvido para o desafio técnico **Elite Dev**.
