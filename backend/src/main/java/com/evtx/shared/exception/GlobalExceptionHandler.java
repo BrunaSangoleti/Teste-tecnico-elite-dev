@@ -41,8 +41,28 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(403, "Forbidden", "Você não tem permissão para executar esta ação"));
     }
 
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(Exception ex) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(400, "Bad Request", "Formato de requisição inválido. Verifique o JSON enviado."));
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(Exception ex) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(400, "Bad Request", "Parâmetro inválido na URL."));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(400, "Bad Request", ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
+        // Log original exception to console for debugging!
+        ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponse.of(500, "Internal Server Error", "Erro inesperado, tente novamente"));
     }
