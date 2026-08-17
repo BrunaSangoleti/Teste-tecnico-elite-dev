@@ -6,6 +6,8 @@ import { Home } from './pages/Home';
 import { OrganizerDashboard } from './pages/OrganizerDashboard';
 import { EventDetails } from './pages/EventDetails';
 import { Checkout } from './pages/Checkout';
+import { MyTickets } from './pages/MyTickets';
+import { SharedTicket } from './pages/SharedTicket';
 // Um componente simples para proteger rotas apenas para quem está logado
 function PrivateRoute({ children, allowedRole }: { children: ReactNode, allowedRole?: string }) {
   const { user, isAuthenticated } = useAuth();
@@ -36,6 +38,15 @@ export default function App() {
               <Checkout />
             </PrivateRoute>
           } />
+          {/* Rota Privada: Meus Ingressos (Apenas clientes logados) */}
+          <Route path="/meus-ingressos" element={
+            <PrivateRoute>
+              <MyTickets />
+            </PrivateRoute>
+          } />
+
+          {/* Rota Pública: Compartilhamento de Ingresso (Não exige login) */}
+          <Route path="/ingresso/:shareToken" element={<SharedTicket />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
