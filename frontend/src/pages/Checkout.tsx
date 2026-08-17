@@ -85,35 +85,65 @@ export function Checkout() {
                   required 
                   disabled={paying || statusFeedback === 'SUCCESS'}
                 />
-                <Input 
-                  label="Número do Cartão" 
-                  placeholder="0000 0000 0000 0000 (O backend recusa cartões terminados em 0000)" 
-                  value={cardNumber} 
-                  onChange={e => setCardNumber(e.target.value)} 
-                  required 
-                  disabled={paying || statusFeedback === 'SUCCESS'}
-                  maxLength={19}
-                />
+                <div>
+                  <Input 
+                    label="Número do Cartão" 
+                    placeholder="0000 0000 0000 0000" 
+                    value={cardNumber} 
+                    onChange={e => {
+                      let val = e.target.value.replace(/\D/g, '');
+                      val = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+                      setCardNumber(val);
+                    }} 
+                    required 
+                    disabled={paying || statusFeedback === 'SUCCESS'}
+                    maxLength={19}
+                  />
+                  <p className="text-xs text-orange-600 mt-1 font-medium">
+                    * Alerta: Para fins de teste, o sistema irá recusar cartões finalizados em 0000.
+                  </p>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <Input 
-                    label="Validade (MM/AA)" 
-                    placeholder="12/30" 
-                    value={expiry} 
-                    onChange={e => setExpiry(e.target.value)} 
-                    required 
-                    disabled={paying || statusFeedback === 'SUCCESS'}
-                  />
-                  <Input 
-                    label="CVV" 
-                    placeholder="123" 
-                    type="password"
-                    maxLength={4}
-                    value={cvv} 
-                    onChange={e => setCvv(e.target.value)} 
-                    required 
-                    disabled={paying || statusFeedback === 'SUCCESS'}
-                  />
+                  <div>
+                    <Input 
+                      label="Validade (MM/AA)" 
+                      placeholder="12/30" 
+                      value={expiry} 
+                      onChange={e => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length >= 2) {
+                          val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                        }
+                        setExpiry(val);
+                      }} 
+                      required 
+                      maxLength={5}
+                      disabled={paying || statusFeedback === 'SUCCESS'}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Apenas números. O formato mês/ano é gerado automaticamente.
+                    </p>
+                  </div>
+
+                  <div>
+                    <Input 
+                      label="CVV" 
+                      placeholder="123" 
+                      type="password"
+                      maxLength={3}
+                      value={cvv} 
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setCvv(val.substring(0, 3));
+                      }} 
+                      required 
+                      disabled={paying || statusFeedback === 'SUCCESS'}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Código de 3 dígitos no verso do seu cartão.
+                    </p>
+                  </div>
                 </div>
 
                 <Button 
