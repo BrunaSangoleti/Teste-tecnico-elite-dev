@@ -2,6 +2,7 @@ export type UserRole = 'ORGANIZADOR' | 'CLIENTE' | 'PORTARIA';
 
 export interface User {
   id: string;
+  name?: string;
   email: string;
   role: UserRole;
 }
@@ -10,6 +11,7 @@ export interface Event {
   id: string;
   title: string;
   venueName: string;
+  imageUrl?: string;
   eventDate: string;
   capacity: number;
   price: number;

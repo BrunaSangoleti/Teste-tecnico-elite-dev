@@ -5,8 +5,10 @@ import { type Event } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Navbar } from '../components/layout/Navbar';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Home() {
+  const { user, isAuthenticated } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,6 @@ export function Home() {
       }
     }
     
-    // Pequeno debounce para não floodar a API
     const delayDebounceFn = setTimeout(() => {
       fetchEvents();
     }, 500);
@@ -37,15 +38,24 @@ export function Home() {
       <Navbar />
       
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        
+        {isAuthenticated && user?.role === 'CLIENTE' && (
+          <div className="mb-6">
+            <h2 className="text-xl font-medium text-gray-500">
+              Olá, <span className="text-gray-900 font-bold">{(user.name || user.email).split('@')[0]}</span>! Pronto para viver novas emoções?
+            </h2>
+          </div>
+        )}
+
         <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Próximos Eventos</h1>
-            <p className="mt-2 text-gray-600">Garanta seu ingresso para as melhores experiências.</p>
+            <h1 className="text-3xl font-black text-gray-900">Descubra Próximos Eventos</h1>
+            <p className="mt-2 text-gray-600">Explore shows, peças e festivais rolando perto de você.</p>
           </div>
-          <div className="w-full sm:w-72">
+          <div className="w-full sm:w-80">
             <Input 
               label="" 
-              placeholder="Buscar eventos ou cidades..." 
+              placeholder="Buscar por artistas, shows ou cidades..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -53,15 +63,20 @@ export function Home() {
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-gray-500">Carregando eventos...</div>
+          <div className="text-center py-20 text-gray-500 font-medium">Buscando os melhores eventos...</div>
         ) : events.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">Nenhum evento encontrado.</div>
+          <div className="text-center py-20 text-gray-500">Nenhum evento encontrado para esta busca.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map(event => (
-              <Card key={event.id} className="flex flex-col h-full hover:shadow-md transition-shadow cursor-pointer" noPadding>
-                <div className="h-48 bg-gray-200 w-full overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+              <Card key={event.id} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100" noPadding>
+                <div className="h-56 w-full relative bg-gray-200">
+                  {event.imageUrl ? (
+                    <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600"></div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 right-4 text-white">
                     <p className="text-sm font-semibold uppercase tracking-wider text-primary-400">
                       {new Date(event.eventDate).toLocaleDateString('pt-BR')}

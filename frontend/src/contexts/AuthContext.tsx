@@ -20,9 +20,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('@ingresso:token');
     if (token) {
       try {
-        const decoded = jwtDecode<{ sub: string, role: string, id: string }>(token);
-        // Assumindo que o token traz o email em 'sub' e o papel em 'role'
-        setUser({ id: decoded.id || 'id-temporario', email: decoded.sub, role: decoded.role as any });
+        const decoded = jwtDecode<{ sub: string, role: string, userId: string, name?: string }>(token);
+        setUser({ id: decoded.userId || 'id-temporario', name: decoded.name, email: decoded.sub, role: decoded.role as any });
       } catch (error) {
         logout();
       }
@@ -31,8 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (token: string) => {
     localStorage.setItem('@ingresso:token', token);
-    const decoded = jwtDecode<{ sub: string, role: string, id: string }>(token);
-    setUser({ id: decoded.id || 'id-temporario', email: decoded.sub, role: decoded.role as any });
+    const decoded = jwtDecode<{ sub: string, role: string, userId: string, name?: string }>(token);
+    setUser({ id: decoded.userId || 'id-temporario', name: decoded.name, email: decoded.sub, role: decoded.role as any });
   };
 
   const logout = () => {

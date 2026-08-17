@@ -89,6 +89,7 @@ export function CreateEvent() {
     try {
       const payload = {
         ...data,
+        imageUrl: selectedCatalogItem?.imageUrl || null,
         eventDate: new Date(data.eventDate).toISOString()
       };
       await api.post('/events', payload);
