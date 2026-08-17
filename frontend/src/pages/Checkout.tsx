@@ -29,9 +29,13 @@ export function Checkout() {
     setStatusFeedback('IDLE');
 
     try {
+      // Remove os espaços do cartão antes de enviar para o backend
+      const cleanCardNumber = cardNumber.replace(/\s/g, '');
+
       // Chamada real da API de pagamentos
       await api.post(`/payments/${reservationId}/pay`, { 
-        cardNumber, 
+        method: 'CREDIT_CARD',
+        cardNumber: cleanCardNumber, 
         expiry, 
         cvv, 
         name 
