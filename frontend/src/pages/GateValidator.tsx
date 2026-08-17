@@ -6,16 +6,19 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 
-type ValidationResult = 'IDLE' | 'VALID' | 'USED' | 'INVALID_EVENT' | 'INVALID_TOKEN' | 'ERROR';
+type ValidationResult = 'IDLE' | 'VALIDO' | 'JA_UTILIZADO' | 'EVENTO_ERRADO' | 'INVALIDO' | 'ERROR' | 'ID_INVALIDO';
 
 export function GateValidator() {
   const [manualCode, setManualCode] = useState('');
   const [result, setResult] = useState<ValidationResult>('IDLE');
   const [loading, setLoading] = useState(false);
   const [lastScanned, setLastScanned] = useState('');
+  const [responseMsg, setResponseMsg] = useState('');
 
   // Em um sistema real o porteiro escolheria em qual evento ele está na guarita
   const [eventId, setEventId] = useState('');
+
+  const [scannedCode, setScannedCode] = useState('');
 
   useEffect(() => {
     const scanner = new Html5QrcodeScanner(
@@ -25,31 +28,59 @@ export function GateValidator() {
     );
 
     scanner.render((decodedText) => {
-      handleValidate(decodedText);
+      setScannedCode(decodedText);
     }, () => {});
 
     return () => {
       scanner.clear().catch(console.error);
     };
-  }, [eventId]);
+  }, []);
 
-  const handleValidate = async (qrToken: string) => {
+  // Effect dedicado para lidar com os escaneamentos da câmera sem prender variáveis de estado antigas
+  useEffect(() => {
+    if (scannedCode) {
+      handleValidate(scannedCode, false);
+    }
+  }, [scannedCode]);
+
+  const isValidUUID = (uuid: string) => {
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
+  };
+
+  const handleValidate = async (qrToken: string, isManual: boolean = false) => {
     if (!eventId) {
       alert("Por favor, digite o ID do evento que você está validando.");
       return;
     }
-    if (!qrToken || loading || qrToken === lastScanned) return;
+    
+    // Validação de formato para evitar que o Spring Boot retorne erro 400 genérico de parser
+    if (!isValidUUID(eventId)) {
+      setResult('ID_INVALIDO');
+      setResponseMsg("O ID do evento deve ter o formato de um código UUID válido (ex: 123e4567-e89b-12d3-a456-426614174000).");
+      return;
+    }
+
+    if (!qrToken || loading) return;
+    
+    // Evita loop da câmera, mas permite forçar o envio manual do mesmo código
+    if (!isManual && qrToken === lastScanned) return;
     
     setLoading(true);
     setLastScanned(qrToken);
     
     try {
       const response = await api.post('/tickets/validate', { eventId, code: qrToken });
-      // O backend retorna um response com status: "VALID", "USED", "INVALID_EVENT", "INVALID_TOKEN"
-      setResult(response.data.status as ValidationResult);
+      setResult(response.data.result as ValidationResult);
+      setResponseMsg(response.data.message || '');
     } catch (err: any) {
-      // Caso dê 4xx, verificamos se a API retorna a string no body ou só erro
-      setResult(err.response?.data?.status || 'ERROR');
+      setResult('ERROR');
+      // Se for erro 400, possivelmente o QR code (code) mandou um JSON malformado
+      if (err.response?.status === 400) {
+         setResponseMsg("Código preenchido está em um formato irreconhecível.");
+      } else {
+         setResponseMsg(err.response?.data?.message || 'Erro na comunicação com a API. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -57,11 +88,13 @@ export function GateValidator() {
 
   const getFeedbackConfig = () => {
     switch(result) {
-      case 'VALID': return { color: 'bg-green-500', title: 'ACESSO LIBERADO', desc: 'Ingresso válido!' };
-      case 'USED': return { color: 'bg-yellow-500', title: 'JÁ UTILIZADO', desc: 'Este ingresso já passou pela portaria.' };
-      case 'INVALID_EVENT': return { color: 'bg-orange-500', title: 'EVENTO ERRADO', desc: 'Ingresso pertence a outro evento.' };
-      case 'INVALID_TOKEN': return { color: 'bg-red-600', title: 'INVÁLIDO', desc: 'Código desconhecido ou fraudado.' };
-      default: return { color: 'bg-gray-200', title: 'AGUARDANDO LEITURA', desc: 'Aponte o QR Code ou digite.' };
+      case 'VALIDO': return { color: 'bg-green-500', title: 'ACESSO LIBERADO', desc: responseMsg || 'Ingresso válido!' };
+      case 'JA_UTILIZADO': return { color: 'bg-yellow-500', title: 'JÁ UTILIZADO', desc: responseMsg || 'Este ingresso já passou pela portaria.' };
+      case 'EVENTO_ERRADO': return { color: 'bg-orange-500', title: 'EVENTO ERRADO', desc: responseMsg || 'Ingresso pertence a outro evento.' };
+      case 'INVALIDO': return { color: 'bg-red-600', title: 'CÓDIGO INVÁLIDO', desc: responseMsg || 'O código/QR Code digitado não existe ou foi adulterado.' };
+      case 'ID_INVALIDO': return { color: 'bg-red-800', title: 'ID DO EVENTO INVÁLIDO', desc: responseMsg };
+      case 'ERROR': return { color: 'bg-gray-800', title: 'ERRO', desc: responseMsg };
+      default: return { color: 'bg-gray-900', title: 'AGUARDANDO LEITURA', desc: 'Aponte o QR Code ou digite o código manualmente.' };
     }
   };
 
@@ -87,7 +120,7 @@ export function GateValidator() {
           <p className="text-lg opacity-90">{loading ? 'Validando...' : feedback.desc}</p>
           
           {result !== 'IDLE' && (
-            <Button variant="outline" className="mt-4 bg-white/20 text-white hover:bg-white/30 border-none" onClick={() => {setResult('IDLE'); setLastScanned(''); setManualCode('');}}>
+            <Button variant="outline" className="mt-4 bg-white/20 text-white hover:bg-white/30 border-none" onClick={() => {setResult('IDLE'); setLastScanned(''); setManualCode(''); setScannedCode('');}}>
               Ler Próximo
             </Button>
           )}
@@ -100,7 +133,7 @@ export function GateValidator() {
 
         <Card>
           <h3 className="font-bold mb-4">Digitação Manual</h3>
-          <form onSubmit={(e) => { e.preventDefault(); handleValidate(manualCode); }} className="flex gap-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleValidate(manualCode, true); }} className="flex gap-4">
             <Input 
               label="" 
               placeholder="Digite o código interno do ingresso..." 

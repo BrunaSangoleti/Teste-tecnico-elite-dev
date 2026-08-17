@@ -17,13 +17,20 @@ function PrivateRoute({ children, allowedRole }: { children: ReactNode, allowedR
   return <>{children}</>;
 }
 
+// Impede que o usuário PORTARIA acesse telas de eventos (redireciona para o app dele)
+function BlockPortariaRoute({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  if (user?.role === 'PORTARIA') return <Navigate to="/portaria" />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/evento/:id" element={<EventDetails />} />
+          <Route path="/" element={<BlockPortariaRoute><Home /></BlockPortariaRoute>} />
+          <Route path="/evento/:id" element={<BlockPortariaRoute><EventDetails /></BlockPortariaRoute>} />
           <Route path="/login" element={<Login />} />
 
           {/* Rota protegida, só ORGANIZADOR pode acessar */}
@@ -35,13 +42,13 @@ export default function App() {
 
           {/* Rota protegida, exige estar logado para pagar */}
           <Route path="/checkout/:reservationId" element={
-            <PrivateRoute>
+            <PrivateRoute allowedRole="CLIENTE">
               <Checkout />
             </PrivateRoute>
           } />
           {/* Rota Privada: Meus Ingressos (Apenas clientes logados) */}
           <Route path="/meus-ingressos" element={
-            <PrivateRoute>
+            <PrivateRoute allowedRole="CLIENTE">
               <MyTickets />
             </PrivateRoute>
           } />
