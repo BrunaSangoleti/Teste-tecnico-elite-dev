@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { OrganizerDashboard } from './pages/OrganizerDashboard';
-
+import { EventDetails } from './pages/EventDetails';
 // Um componente simples para proteger rotas apenas para quem está logado
 function PrivateRoute({ children, allowedRole }: { children: ReactNode, allowedRole?: string }) {
   const { user, isAuthenticated } = useAuth();
@@ -19,8 +19,9 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/evento/:id" element={<EventDetails />} />
           <Route path="/login" element={<Login />} />
-          
+
           {/* Rota protegida, só ORGANIZADOR pode acessar */}
           <Route path="/organizador/eventos" element={
             <PrivateRoute allowedRole="ORGANIZADOR">
