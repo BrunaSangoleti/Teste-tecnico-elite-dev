@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { OrganizerDashboard } from './pages/OrganizerDashboard';
 import { EventDetails } from './pages/EventDetails';
+import { Checkout } from './pages/Checkout';
 // Um componente simples para proteger rotas apenas para quem está logado
 function PrivateRoute({ children, allowedRole }: { children: ReactNode, allowedRole?: string }) {
   const { user, isAuthenticated } = useAuth();
@@ -26,6 +27,13 @@ export default function App() {
           <Route path="/organizador/eventos" element={
             <PrivateRoute allowedRole="ORGANIZADOR">
               <OrganizerDashboard />
+            </PrivateRoute>
+          } />
+
+          {/* Rota protegida, exige estar logado para pagar */}
+          <Route path="/checkout/:reservationId" element={
+            <PrivateRoute>
+              <Checkout />
             </PrivateRoute>
           } />
         </Routes>

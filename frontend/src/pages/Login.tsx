@@ -21,9 +21,13 @@ export function Login() {
     setLoading(true);
 
     try {
-      // Endpoint assumido do backend para login
-      const response = await api.post('/auth/login', { email, password });
-      login(response.data.token);
+      // Como estamos testando sem o backend, vamos pular a chamada de API e forçar o login com um Token Falso (Mock)!
+      // const response = await api.post('/auth/login', { email, password });
+      
+      // Token JWT falso válido para nossa biblioteca jwt-decode não quebrar. Role = CLIENTE
+      const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbGllbnRlQHRlc3RlLmNvbSIsInJvbGUiOiJDTElFTlRFIiwiaWQiOiIxMjMiLCJpYXQiOjE1MTYyMzkwMjJ9.mocked_signature";
+      
+      login(fakeToken);
       navigate('/'); // Vai pra home
     } catch (err) {
       setError('E-mail ou senha inválidos.');
