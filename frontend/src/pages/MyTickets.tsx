@@ -4,10 +4,13 @@ import { api } from '../services/api';
 import { Navbar } from '../components/layout/Navbar';
 import { Card } from '../components/ui/Card';
 import { type Ticket } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export function MyTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const firstName = user?.name?.split(' ')[0] || 'Visitante';
 
   useEffect(() => {
     async function fetchTickets() {
@@ -27,15 +30,24 @@ export function MyTickets() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <main className="flex-grow max-w-5xl mx-auto w-full px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Meus Ingressos</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Ingressos de {firstName} 🎫</h1>
+          <p className="mt-2 text-gray-500 text-lg">Aqui estão seus acessos garantidos. Apresente o QR Code na entrada do evento.</p>
+        </div>
 
         {loading ? (
-          <p>Carregando ingressos...</p>
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mb-4"></div>
+            <p className="text-gray-500 font-medium">Buscando na sua carteira digital...</p>
+          </div>
         ) : tickets.length === 0 ? (
-          <Card className="text-center py-10">
-            <p className="text-gray-500 mb-4">Você ainda não tem nenhum ingresso.</p>
-            <Link to="/" className="text-primary-600 font-bold hover:underline">Ir para a Home</Link>
-          </Card>
+          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 border-dashed">
+            <p className="text-gray-500 text-lg font-medium">Sua carteira de ingressos está vazia.</p>
+            <p className="text-gray-400 text-sm mt-2 mb-6">Que tal descobrir o seu próximo show inesquecível?</p>
+            <Link to="/" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm">
+              Explorar Eventos
+            </Link>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tickets.map(ticket => (

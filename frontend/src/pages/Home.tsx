@@ -56,17 +56,17 @@ export function Home() {
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         
         {isAuthenticated && user?.role === 'CLIENTE' && (
-          <div className="mb-6">
-            <h2 className="text-xl font-medium text-gray-500">
-              Olá, <span className="text-gray-900 font-bold">{(user.name || user.email).split('@')[0]}</span>! Pronto para viver novas emoções?
+          <div className="mb-4">
+            <h2 className="text-lg font-medium text-gray-500">
+              Boas-vindas, <span className="text-gray-900 font-bold">{user.name?.split(' ')[0] || user.email.split('@')[0]}</span>!
             </h2>
           </div>
         )}
 
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black text-gray-900">Descubra Próximos Eventos</h1>
-            <p className="mt-2 text-gray-600">Explore shows, peças e festivais rolando perto de você.</p>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">O que vamos curtir hoje?</h1>
+            <p className="mt-3 text-gray-500 text-lg">Os melhores shows, peças e festivais estão rolando por aqui. Escolha o seu!</p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -80,7 +80,7 @@ export function Home() {
             </div>
             <div className="w-full sm:w-auto min-w-[220px]">
               <select 
-                className="w-full h-11 px-4 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none"
+                className="w-full h-11 px-4 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none shadow-sm"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
               >
@@ -93,9 +93,15 @@ export function Home() {
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-gray-500 font-medium">Buscando os melhores eventos...</div>
+          <div className="text-center py-24">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mb-4"></div>
+            <p className="text-gray-500 font-medium">Buscando os melhores eventos...</p>
+          </div>
         ) : sortedEvents.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">Nenhum evento encontrado para esta busca.</div>
+          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 border-dashed mt-4">
+            <p className="text-gray-500 text-lg font-medium">Ops! Nenhum evento encontrado para essa busca.</p>
+            <p className="text-gray-400 text-sm mt-2">Tente buscar por um termo diferente ou limpe o campo de pesquisa.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedEvents.map(event => (
