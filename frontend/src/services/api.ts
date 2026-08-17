@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // URL do backend Java Spring Boot (altere se precisar)
 export const api = axios.create({
-  baseURL: 'http://localhost:8080', 
+  baseURL: 'http://localhost:8081/api', 
 });
 
 // Interceptor: antes de enviar qualquer chamada, injeta o token

@@ -1,22 +1,34 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card } from '../components/ui/Card';
+import { api } from '../services/api';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Card } from '../components/ui/Card';
 
 export function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Tokens falsos gerados apenas para teste no Front-End sem precisar do backend
-  const MOCK_TOKENS = {
-    CLIENTE: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbGllbnRlQHRlc3RlLmNvbSIsInJvbGUiOiJDTElFTlRFIiwiaWQiOiIxMjMiLCJpYXQiOjE1MTYyMzkwMjJ9.mocked_signature",
-    ORGANIZADOR: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcmdhbml6YWRvckB0ZXN0ZS5jb20iLCJyb2xlIjoiT1JHQU5JWkFET1IiLCJpZCI6IjQ1NiIsImlhdCI6MTUxNjIzOTAyMn0=.mocked_signature",
-    PORTARIA: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwb3J0YXJpYUB0ZXN0ZS5jb20iLCJyb2xlIjoiUE9SVEFSSUEiLCJpZCI6Ijc4OSIsImlhdCI6MTUxNjIzOTAyMn0=.mocked_signature"
-  };
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  const handleMockLogin = (role: 'CLIENTE' | 'ORGANIZADOR' | 'PORTARIA') => {
-    login(MOCK_TOKENS[role]);
-    navigate('/');
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      login(response.data.token);
+      navigate('/');
+    } catch (err) {
+      setError('E-mail ou senha inválidos.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -24,23 +36,31 @@ export function Login() {
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Elite Tickets</h1>
-          <p className="text-gray-500 mt-2">Ambiente de Testes (Mock)</p>
-          <p className="text-sm text-primary-600 mt-2 font-medium">Escolha qual perfil deseja simular:</p>
+          <p className="text-gray-500 mt-2">Faça login na sua conta</p>
         </div>
         
-        <div className="space-y-4">
-          <Button fullWidth onClick={() => handleMockLogin('CLIENTE')}>
-            Logar como CLIENTE
-          </Button>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Input 
+            label="E-mail" 
+            type="email" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            required 
+          />
+          <Input 
+            label="Senha" 
+            type="password" 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+            required 
+          />
           
-          <Button fullWidth variant="secondary" onClick={() => handleMockLogin('ORGANIZADOR')}>
-            Logar como ORGANIZADOR
-          </Button>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           
-          <Button fullWidth variant="outline" onClick={() => handleMockLogin('PORTARIA')}>
-            Logar como PORTARIA
+          <Button type="submit" fullWidth isLoading={loading}>
+            Entrar
           </Button>
-        </div>
+        </form>
       </Card>
     </div>
   );
