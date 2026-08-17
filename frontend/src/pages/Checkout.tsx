@@ -130,23 +130,24 @@ export function Checkout() {
           </div>
 
           <div className="md:col-span-1">
-            <Card className="bg-gray-800 text-white border-none shadow-xl">
-              <h3 className="text-lg font-bold mb-4 text-gray-200 border-b border-gray-700 pb-2">Resumo do Pedido</h3>
-              <div className="space-y-4">
+            <div className="bg-gray-900 text-white rounded-xl p-6 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+              <h3 className="text-xl font-black mb-6 text-white border-b border-gray-700 pb-4 relative z-10">Resumo do Pedido</h3>
+              <div className="space-y-4 relative z-10">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">Quantidade</span>
-                  <span className="font-bold">{quantity}x Ingressos</span>
+                  <span className="text-gray-300">Quantidade</span>
+                  <span className="font-bold text-white">{quantity}x Ingressos</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">Taxa de conveniência</span>
+                  <span className="text-gray-300">Taxa de conveniência</span>
                   <span className="font-bold text-green-400">Grátis</span>
                 </div>
-                <div className="border-t border-gray-700 pt-4 mt-4 flex justify-between items-center">
-                  <span className="text-gray-300">Total</span>
-                  <span className="text-2xl font-bold">R$ {Number(totalAmount).toFixed(2)}</span>
+                <div className="border-t border-gray-700 pt-6 mt-6 flex justify-between items-end">
+                  <span className="text-gray-300 font-medium pb-1">Total a Pagar</span>
+                  <span className="text-3xl font-black text-primary-400">R$ {Number(totalAmount).toFixed(2).replace('.', ',')}</span>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </main>
