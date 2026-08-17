@@ -8,6 +8,7 @@ import { EventDetails } from './pages/EventDetails';
 import { Checkout } from './pages/Checkout';
 import { MyTickets } from './pages/MyTickets';
 import { SharedTicket } from './pages/SharedTicket';
+import { GateValidator } from './pages/GateValidator';
 // Um componente simples para proteger rotas apenas para quem está logado
 function PrivateRoute({ children, allowedRole }: { children: ReactNode, allowedRole?: string }) {
   const { user, isAuthenticated } = useAuth();
@@ -42,6 +43,12 @@ export default function App() {
           <Route path="/meus-ingressos" element={
             <PrivateRoute>
               <MyTickets />
+            </PrivateRoute>
+          } />
+          {/* Rota Protegida da Portaria */}
+          <Route path="/portaria" element={
+            <PrivateRoute allowedRole="PORTARIA">
+              <GateValidator />
             </PrivateRoute>
           } />
 

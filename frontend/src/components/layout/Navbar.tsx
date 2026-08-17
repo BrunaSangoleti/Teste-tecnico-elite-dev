@@ -29,6 +29,11 @@ export function Navbar() {
                                         Meus Ingressos
                                     </Link>
                                 )}
+                                {user?.role === 'PORTARIA' && (
+                                    <Link to="/portaria" className="text-sm font-bold text-red-600 hover:text-red-700 uppercase">
+                                        App da Portaria
+                                    </Link>
+                                )}
                                 <Button variant="outline" onClick={logout}>Sair</Button>
                             </>
                         ) : (
