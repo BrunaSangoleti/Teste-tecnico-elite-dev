@@ -30,9 +30,14 @@ export function Navbar() {
                                     </>
                                 )}
                                 {user?.role === 'CLIENTE' && (
-                                    <Link to="/meus-ingressos" className="text-sm font-medium text-gray-700 hover:text-primary-600">
-                                        Meus Ingressos
-                                    </Link>
+                                    <>
+                                        <Link to="/" className="text-sm font-medium text-gray-700 hover:text-primary-600">
+                                            Home
+                                        </Link>
+                                        <Link to="/meus-ingressos" className="text-sm font-medium text-gray-700 hover:text-primary-600">
+                                            Meus Ingressos
+                                        </Link>
+                                    </>
                                 )}
                                 <Button variant="outline" onClick={logout}>Sair</Button>
                             </>
