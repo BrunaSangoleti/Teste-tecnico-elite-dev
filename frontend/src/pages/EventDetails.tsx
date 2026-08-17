@@ -26,6 +26,14 @@ export function EventDetails() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState(false);
+  const [sector, setSector] = useState('Pista');
+  const [mockedSeat, setMockedSeat] = useState('');
+
+  const MOCKED_SEATS = [
+    'Fila A - Poltrona 01', 'Fila A - Poltrona 02', 'Fila A - Poltrona 03', 'Fila A - Poltrona 04',
+    'Fila B - Poltrona 01', 'Fila B - Poltrona 02', 'Fila B - Poltrona 03', 'Fila B - Poltrona 04',
+    'Fila C - Poltrona 01', 'Fila C - Poltrona 02', 'Fila C - Poltrona 03', 'Fila C - Poltrona 04'
+  ];
 
   useEffect(() => {
     async function fetchEventDetails() {
@@ -63,16 +71,15 @@ export function EventDetails() {
       return;
     }
 
-    if (event?.seatMapEnabled && !selectedSeat) {
-      alert("Por favor, selecione um assento antes de continuar.");
+    if (sector.includes('Camarote') && !mockedSeat) {
+      alert("Por favor, selecione uma poltrona no mapa antes de continuar.");
       return;
     }
 
     setReserving(true);
     try {
-      const payload = event?.seatMapEnabled 
-        ? { eventId: id, seatIds: [selectedSeat] }
-        : { eventId: id, quantity };
+      const finalQuantity = sector.includes('Camarote') ? 1 : quantity;
+      const payload = { eventId: id, quantity: finalQuantity };
 
       const response = await api.post('/reservations', payload);
       navigate(`/checkout/${response.data.id}`, { 
@@ -126,9 +133,9 @@ export function EventDetails() {
                 <div className="mt-8 p-4 bg-primary-50 rounded-xl border border-primary-100 flex items-start gap-3">
                   <span className="text-xl">💡</span>
                   <p className="text-primary-800 text-sm font-medium">
-                    {event.seatMapEnabled 
-                      ? 'Este evento possui lugares marcados. Escolha seu assento exato para garantir a melhor visão!'
-                      : `Restam apenas ${availableSpots} ingressos para este lote. Não fique de fora!`}
+                    {sector.includes('Camarote') 
+                      ? `Você escolheu a área VIP! Escolha a sua poltrona no mapa abaixo. Restam ${availableSpots} vagas no total do evento.`
+                      : `Área de Pista selecionada. Restam apenas ${availableSpots} ingressos disponíveis para o show. Não fique de fora!`}
                   </p>
                 </div>
               </div>
@@ -142,33 +149,43 @@ export function EventDetails() {
                   <p className="font-bold">Acesso restrito</p>
                   <p className="text-sm mt-1">Contas gerenciais não podem reservar ingressos. Entre com uma conta de Cliente.</p>
                 </div>
-              ) : availableSpots > 0 || event.seatMapEnabled ? (
+              ) : availableSpots > 0 ? (
                 <>
-                  {event.seatMapEnabled ? (
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Selecione o Setor</label>
+                    <select 
+                      className="w-full h-12 border-gray-300 rounded-xl shadow-sm px-4 border focus:ring-2 focus:ring-primary-500 outline-none transition-shadow bg-gray-50 text-gray-900"
+                      value={sector}
+                      onChange={e => {
+                        setSector(e.target.value);
+                        setMockedSeat('');
+                        setQuantity(1);
+                      }}
+                    >
+                      <option value="Pista">Pista Comum</option>
+                      <option value="Pista Premium">Pista Premium</option>
+                      <option value="Camarote">Camarote</option>
+                      <option value="Camarote Premium">Camarote Premium VIP</option>
+                    </select>
+                  </div>
+
+                  {sector.includes('Camarote') ? (
                     <div className="mb-6">
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Selecione o Assento Desejado</label>
-                      {noSeatsConfigured ? (
-                        <div className="p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg border border-red-100 text-center">
-                          Atenção: O mapa de assentos ainda não foi liberado pela organização.
-                        </div>
-                      ) : (
-                        <select 
-                          className="w-full h-12 border-gray-300 rounded-xl shadow-sm px-4 border focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow bg-gray-50 text-gray-900"
-                          value={selectedSeat || ''}
-                          onChange={e => setSelectedSeat(e.target.value)}
-                        >
-                          <option value="">-- Escolha um assento --</option>
-                          {seats.map(seat => (
-                            <option key={seat.id} value={seat.id} disabled={seat.status !== 'AVAILABLE'}>
-                              {seat.sector} - Fila {seat.row} / Poltrona {seat.number} {seat.status !== 'AVAILABLE' ? '(Indisponível)' : ''}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Escolha seu Assento no {sector}</label>
+                      <select 
+                        className="w-full h-12 border-gray-300 rounded-xl shadow-sm px-4 border focus:ring-2 focus:ring-primary-500 outline-none transition-shadow bg-gray-50 text-gray-900"
+                        value={mockedSeat}
+                        onChange={e => setMockedSeat(e.target.value)}
+                      >
+                        <option value="">-- Escolha um assento no mapa --</option>
+                        {MOCKED_SEATS.map(seat => (
+                          <option key={seat} value={seat}>{seat}</option>
+                        ))}
+                      </select>
                       
-                      {!selectedSeat && !noSeatsConfigured && (
+                      {!mockedSeat && (
                         <p className="text-xs text-orange-600 font-medium mt-2">
-                          * É obrigatório selecionar um assento para prosseguir com a compra.
+                          * É obrigatório marcar a sua poltrona para setores VIP.
                         </p>
                       )}
                     </div>
@@ -195,7 +212,7 @@ export function EventDetails() {
                   <div className="flex justify-between items-center mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <span className="text-sm font-bold text-gray-500 uppercase tracking-wide">Total a pagar</span>
                     <span className="text-2xl font-black text-primary-600">
-                      R$ {(event.price * (event.seatMapEnabled ? (selectedSeat ? 1 : 0) : quantity)).toFixed(2).replace('.', ',')}
+                      R$ {(event.price * (sector.includes('Camarote') ? 1 : quantity)).toFixed(2).replace('.', ',')}
                     </span>
                   </div>
 
@@ -204,7 +221,7 @@ export function EventDetails() {
                     className="h-14 text-lg shadow-md"
                     onClick={handleReserve} 
                     isLoading={reserving} 
-                    disabled={(event.seatMapEnabled && !selectedSeat) || noSeatsConfigured}
+                    disabled={sector.includes('Camarote') && !mockedSeat}
                   >
                     Confirmar Reserva
                   </Button>

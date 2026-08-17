@@ -195,10 +195,7 @@ export function CreateEvent() {
                 <Input label="Preço (R$)" type="number" step="0.01" {...registerImport('price')} error={importErrors.price?.message} />
               </div>
 
-              <div className="flex items-center space-x-2 pt-2">
-                <input type="checkbox" id="seatMapEnabled" {...registerImport('seatMapEnabled')} className="h-4 w-4 text-primary-600 rounded" />
-                <label htmlFor="seatMapEnabled" className="text-sm font-medium text-gray-700">Modo Mapa de Assentos Numéricos</label>
-              </div>
+
 
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" type="button" onClick={() => setSelectedCatalogItem(null)}>Cancelar</Button>
