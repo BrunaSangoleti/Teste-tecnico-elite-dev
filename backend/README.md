@@ -1,3 +1,5 @@
+
+
 # EVTX Backend - Desafio Elite Dev
 
 Este é o backend do sistema **EVTX**, uma plataforma de gerenciamento e venda de ingressos desenvolvida como parte do Desafio Elite Dev. A aplicação fornece uma API RESTful completa para gerenciamento de eventos, reserva de assentos, processamento de pagamentos simulados e validação de ingressos via QR Code.

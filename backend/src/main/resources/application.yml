@@ -24,5 +24,5 @@ app:
     expiration-minutes: 120
   catalog:
     ticketmaster:
-      api-key: ${TICKETMASTER_API_KEY:}
+      api-key: ${TICKETMASTER_API_KEY:75qRvvwobHQPckVBi9GeQPdG6RJw6QEH}
       base-url: https://app.ticketmaster.com/discovery/v2

@@ -60,4 +60,24 @@ public class EventService {
             throw new ForbiddenActionException("You do not own this event");
         }
     }
+
+    @Transactional
+    public Event update(UUID id, com.evtx.event.dto.EventUpdateRequest request, SecurityUser organizer) {
+        Event event = getById(id);
+        assertOwnership(event, organizer.getId());
+
+        event.setVenueName(request.venueName());
+        event.setEventDate(request.eventDate());
+        event.setCapacity(request.capacity());
+        event.setPrice(request.price());
+
+        return eventRepository.save(event);
+    }
+
+    @Transactional
+    public void delete(UUID id, SecurityUser organizer) {
+        Event event = getById(id);
+        assertOwnership(event, organizer.getId());
+        eventRepository.delete(event);
+    }
 }

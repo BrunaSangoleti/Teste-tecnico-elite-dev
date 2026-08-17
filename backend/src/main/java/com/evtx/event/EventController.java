@@ -77,4 +77,24 @@ public class EventController {
     ) {
         return EventResponse.from(eventService.create(request, organizer));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZADOR')")
+    public EventResponse update(
+            @PathVariable UUID id,
+            @Valid @RequestBody com.evtx.event.dto.EventUpdateRequest request,
+            @AuthenticationPrincipal SecurityUser organizer
+    ) {
+        return EventResponse.from(eventService.update(id, request, organizer));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZADOR')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal SecurityUser organizer
+    ) {
+        eventService.delete(id, organizer);
+    }
 }
