@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { type Event } from '../types';
@@ -11,6 +11,7 @@ export function Home() {
   const { user, isAuthenticated } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'DATE_ASC' | 'PRICE_ASC' | 'PRICE_DESC'>('DATE_ASC');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,21 @@ export function Home() {
     return () => clearTimeout(delayDebounceFn);
   }, [search]);
 
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => {
+      if (sortBy === 'DATE_ASC') {
+        return new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
+      }
+      if (sortBy === 'PRICE_ASC') {
+        return a.price - b.price;
+      }
+      if (sortBy === 'PRICE_DESC') {
+        return b.price - a.price;
+      }
+      return 0;
+    });
+  }, [events, sortBy]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -47,28 +63,42 @@ export function Home() {
           </div>
         )}
 
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-gray-900">Descubra Próximos Eventos</h1>
             <p className="mt-2 text-gray-600">Explore shows, peças e festivais rolando perto de você.</p>
           </div>
-          <div className="w-full sm:w-80">
-            <Input 
-              label="" 
-              placeholder="Buscar por artistas, shows ou cidades..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="w-full sm:w-64">
+              <Input 
+                label="" 
+                placeholder="Buscar por artistas, shows ou cidades..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="w-full sm:w-auto min-w-[220px]">
+              <select 
+                className="w-full h-11 px-4 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+              >
+                <option value="DATE_ASC">⏰ Datas mais Próximas</option>
+                <option value="PRICE_ASC">💰 Menor Preço</option>
+                <option value="PRICE_DESC">💎 Maior Preço</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {loading ? (
           <div className="text-center py-20 text-gray-500 font-medium">Buscando os melhores eventos...</div>
-        ) : events.length === 0 ? (
+        ) : sortedEvents.length === 0 ? (
           <div className="text-center py-20 text-gray-500">Nenhum evento encontrado para esta busca.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map(event => (
+            {sortedEvents.map(event => (
               <Card key={event.id} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100" noPadding>
                 <div className="h-56 w-full relative bg-gray-200">
                   {event.imageUrl ? (
