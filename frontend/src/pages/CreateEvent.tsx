@@ -17,7 +17,7 @@ const importSchema = z.object({
   eventDate: z.string().refine(val => new Date(val) > new Date(), { message: 'A data deve ser no futuro' }),
   capacity: z.coerce.number().min(1, 'A capacidade deve ser maior que zero'),
   price: z.coerce.number().min(0, 'O preço não pode ser negativo'),
-  seatMapEnabled: z.boolean().default(false),
+  seatMapEnabled: z.boolean().default(true),
 });
 type ImportForm = z.infer<typeof importSchema>;
 
@@ -89,6 +89,7 @@ export function CreateEvent() {
     try {
       const payload = {
         ...data,
+        seatMapEnabled: true,
         imageUrl: selectedCatalogItem?.imageUrl || null,
         eventDate: new Date(data.eventDate).toISOString()
       };

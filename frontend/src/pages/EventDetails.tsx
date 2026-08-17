@@ -22,18 +22,11 @@ export function EventDetails() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
-  const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState(false);
   const [sector, setSector] = useState('Pista');
-  const [mockedSeat, setMockedSeat] = useState('');
-
-  const MOCKED_SEATS = [
-    'Fila A - Poltrona 01', 'Fila A - Poltrona 02', 'Fila A - Poltrona 03', 'Fila A - Poltrona 04',
-    'Fila B - Poltrona 01', 'Fila B - Poltrona 02', 'Fila B - Poltrona 03', 'Fila B - Poltrona 04',
-    'Fila C - Poltrona 01', 'Fila C - Poltrona 02', 'Fila C - Poltrona 03', 'Fila C - Poltrona 04'
-  ];
+  const [selectedSeatId, setSelectedSeatId] = useState('');
 
   useEffect(() => {
     async function fetchEventDetails() {
@@ -71,15 +64,16 @@ export function EventDetails() {
       return;
     }
 
-    if (sector.includes('Camarote') && !mockedSeat) {
+    if (sector.includes('Camarote') && !selectedSeatId) {
       alert("Por favor, selecione uma poltrona no mapa antes de continuar.");
       return;
     }
 
     setReserving(true);
     try {
-      const finalQuantity = sector.includes('Camarote') ? 1 : quantity;
-      const payload = { eventId: id, quantity: finalQuantity };
+      const payload = sector.includes('Camarote') 
+        ? { eventId: id, seatIds: [selectedSeatId] }
+        : { eventId: id, quantity };
 
       const response = await api.post('/reservations', payload);
       navigate(`/checkout/${response.data.id}`, { 
@@ -99,7 +93,7 @@ export function EventDetails() {
   if (!event) return <div className="text-center p-20 text-red-500 font-medium">Evento não encontrado.</div>;
 
   const availableSpots = event.capacity - event.soldCount;
-  const noSeatsConfigured = event.seatMapEnabled && seats.length === 0;
+  const currentSectorSeats = seats.filter(s => s.sector === sector);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -158,14 +152,14 @@ export function EventDetails() {
                       value={sector}
                       onChange={e => {
                         setSector(e.target.value);
-                        setMockedSeat('');
+                        setSelectedSeatId('');
                         setQuantity(1);
                       }}
                     >
                       <option value="Pista">Pista Comum</option>
                       <option value="Pista Premium">Pista Premium</option>
                       <option value="Camarote">Camarote</option>
-                      <option value="Camarote Premium">Camarote Premium VIP</option>
+                      <option value="Camarote Premium VIP">Camarote Premium VIP</option>
                     </select>
                   </div>
 
@@ -174,16 +168,18 @@ export function EventDetails() {
                       <label className="block text-sm font-bold text-gray-700 mb-2">Escolha seu Assento no {sector}</label>
                       <select 
                         className="w-full h-12 border-gray-300 rounded-xl shadow-sm px-4 border focus:ring-2 focus:ring-primary-500 outline-none transition-shadow bg-gray-50 text-gray-900"
-                        value={mockedSeat}
-                        onChange={e => setMockedSeat(e.target.value)}
+                        value={selectedSeatId}
+                        onChange={e => setSelectedSeatId(e.target.value)}
                       >
                         <option value="">-- Escolha um assento no mapa --</option>
-                        {MOCKED_SEATS.map(seat => (
-                          <option key={seat} value={seat}>{seat}</option>
+                        {currentSectorSeats.map(seat => (
+                          <option key={seat.id} value={seat.id} disabled={seat.status !== 'AVAILABLE'}>
+                            Fila {seat.row} - Poltrona {seat.number} {seat.status !== 'AVAILABLE' ? '(Indisponível)' : ''}
+                          </option>
                         ))}
                       </select>
                       
-                      {!mockedSeat && (
+                      {!selectedSeatId && (
                         <p className="text-xs text-orange-600 font-medium mt-2">
                           * É obrigatório marcar a sua poltrona para setores VIP.
                         </p>
@@ -221,7 +217,7 @@ export function EventDetails() {
                     className="h-14 text-lg shadow-md"
                     onClick={handleReserve} 
                     isLoading={reserving} 
-                    disabled={sector.includes('Camarote') && !mockedSeat}
+                    disabled={sector.includes('Camarote') && !selectedSeatId}
                   >
                     Confirmar Reserva
                   </Button>
