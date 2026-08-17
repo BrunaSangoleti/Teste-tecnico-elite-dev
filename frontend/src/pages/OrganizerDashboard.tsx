@@ -179,10 +179,25 @@ export function OrganizerDashboard() {
           <p className="text-center text-gray-500 py-10">Carregando sua agenda de eventos...</p>
         ) : filteredEvents.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 border-dashed">
-            <p className="text-gray-500 text-lg">Nenhum evento encontrado na sua agenda.</p>
-            <Button variant="outline" className="mt-4" onClick={() => navigate('/organizador/novo-evento')}>
-              Ir para a Ticketmaster
-            </Button>
+            {myEvents.length === 0 ? (
+              <>
+                <p className="text-gray-500 text-lg font-medium">Você ainda não possui nenhum show agendado.</p>
+                <p className="text-gray-400 text-sm mt-1 mb-6">Importe seu primeiro evento da Ticketmaster e comece a vender ingressos hoje mesmo!</p>
+                <Button variant="outline" onClick={() => navigate('/organizador/novo-evento')}>
+                  Explorar Catálogo Ticketmaster
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 text-lg font-medium">Nenhum evento corresponde aos filtros selecionados.</p>
+                <Button variant="outline" className="mt-6" onClick={() => {
+                  setFilterDate('ALL');
+                  setFilterSales('ALL');
+                }}>
+                  Limpar Filtros
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5">
