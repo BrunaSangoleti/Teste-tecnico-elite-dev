@@ -9,6 +9,7 @@ public record EventCreateRequest(
         @NotBlank String title,
         String description,
         String externalRefId,       // null se o evento for cadastrado manualmente
+        String imageUrl,
         @NotBlank String venueName,
         String venueAddress,
         @NotNull @Future LocalDateTime eventDate,

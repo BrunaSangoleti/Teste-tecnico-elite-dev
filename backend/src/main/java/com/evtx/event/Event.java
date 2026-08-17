@@ -42,6 +42,9 @@ public class Event {
     @Column(name = "external_ref_id")
     private String externalRefId;
 
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "external_source", nullable = false)
     private ExternalSource externalSource;

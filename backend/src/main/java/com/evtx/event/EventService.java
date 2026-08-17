@@ -42,6 +42,7 @@ public class EventService {
                 .title(request.title())
                 .description(request.description())
                 .externalRefId(request.externalRefId())
+                .imageUrl(request.imageUrl())
                 .externalSource(ExternalSource.MANUAL)
                 .venueName(request.venueName())
                 .venueAddress(request.venueAddress())
