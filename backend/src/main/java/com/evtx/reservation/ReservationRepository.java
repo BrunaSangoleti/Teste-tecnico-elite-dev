@@ -2,10 +2,13 @@ package com.evtx.reservation;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
 
     List<Reservation> findByClientId(UUID clientId);
+
+    List<Reservation> findByStatusAndCreatedAtBefore(ReservationStatus status, Instant threshold);
 }

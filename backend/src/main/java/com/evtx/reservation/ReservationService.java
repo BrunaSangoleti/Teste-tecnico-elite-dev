@@ -103,4 +103,26 @@ public class ReservationService {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found: " + id));
     }
+
+    @Transactional
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60000) // Roda a cada 1 minuto
+    public void cleanupExpiredReservations() {
+        // Reservas expiram após 10 minutos (600 segundos) se não forem pagas
+        java.time.Instant threshold = java.time.Instant.now().minusSeconds(600);
+        List<Reservation> expired = reservationRepository.findByStatusAndCreatedAtBefore(
+                ReservationStatus.PENDING_PAYMENT, threshold);
+
+        for (Reservation reservation : expired) {
+            reservation.setStatus(ReservationStatus.EXPIRED);
+
+            if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled())) {
+                reservation.getSeats().forEach(s -> seatRepository.releaseReservation(s.getId()));
+            } else {
+                eventRepository.releaseQuantity(
+                        reservation.getEvent().getId(), reservation.getQuantity());
+            }
+
+            reservationRepository.save(reservation);
+        }
+    }
 }
