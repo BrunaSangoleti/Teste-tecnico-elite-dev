@@ -40,12 +40,8 @@ public class ReservationService {
 
         Reservation reservation;
 
-        if (Boolean.TRUE.equals(event.getSeatMapEnabled())) {
+        if (Boolean.TRUE.equals(event.getSeatMapEnabled()) && request.seatIds() != null && !request.seatIds().isEmpty()) {
             // ── MODO MAPA DE ASSENTOS ──────────────────────────────────────────
-            if (request.seatIds() == null || request.seatIds().isEmpty()) {
-                throw new ConflictException("This event requires seat selection.");
-            }
-
             List<Seat> reservedSeats = new ArrayList<>();
             for (UUID seatId : request.seatIds()) {
                 // Update condicional: só reserva se status = AVAILABLE

@@ -24,7 +24,7 @@ public class TicketService {
         List<Ticket> tickets = new ArrayList<>();
         String ownerName = reservation.getClient().getName();
 
-        if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled())) {
+        if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled()) && reservation.getSeats() != null && !reservation.getSeats().isEmpty()) {
             for (Seat seat : reservation.getSeats()) {
                 tickets.add(buildAndSave(reservation, seat, ownerName));
             }

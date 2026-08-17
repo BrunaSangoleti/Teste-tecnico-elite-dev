@@ -20,6 +20,7 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final UserService userService;
+    private final SeatRepository seatRepository;
 
     public List<Event> search(String query, String city, LocalDateTime from, LocalDateTime to) {
         return eventRepository.search(query, city, from, to);
@@ -53,7 +54,47 @@ public class EventService {
                 .organizer(organizerUser)
                 .build();
 
-        return eventRepository.save(event);
+        Event savedEvent = eventRepository.save(event);
+
+        if (Boolean.TRUE.equals(savedEvent.getSeatMapEnabled())) {
+            generateMockedVipSeats(savedEvent);
+        }
+
+        return savedEvent;
+    }
+
+    private void generateMockedVipSeats(Event event) {
+        List<Seat> seatsToSave = new java.util.ArrayList<>();
+        
+        // Camarote -> Filas A, B, C
+        String[] camaroteRows = {"A", "B", "C"};
+        for (String row : camaroteRows) {
+            for (int i = 1; i <= 4; i++) {
+                seatsToSave.add(Seat.builder()
+                        .event(event)
+                        .sector("Camarote")
+                        .row(row)
+                        .number(i)
+                        .status(SeatStatus.AVAILABLE)
+                        .build());
+            }
+        }
+
+        // Camarote Premium VIP -> Filas D, E, F
+        String[] premiumRows = {"D", "E", "F"};
+        for (String row : premiumRows) {
+            for (int i = 1; i <= 4; i++) {
+                seatsToSave.add(Seat.builder()
+                        .event(event)
+                        .sector("Camarote Premium VIP")
+                        .row(row)
+                        .number(i)
+                        .status(SeatStatus.AVAILABLE)
+                        .build());
+            }
+        }
+        
+        seatRepository.saveAll(seatsToSave);
     }
 
     public void assertOwnership(Event event, UUID organizerId) {
