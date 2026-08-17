@@ -10,6 +10,8 @@ import { Input } from '../components/ui/Input';
 import { Navbar } from '../components/layout/Navbar';
 import { useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const editSchema = z.object({
   venueName: z.string().min(3, 'Informe o local'),
   eventDate: z.string().refine(val => new Date(val) > new Date(), { message: 'A data deve ser no futuro' }),
@@ -20,6 +22,9 @@ type EditForm = z.infer<typeof editSchema>;
 
 export function OrganizerDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const firstName = user?.name?.split(' ')[0] || 'Organizador';
+
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [fetchingEvents, setFetchingEvents] = useState(true);
 
@@ -126,8 +131,8 @@ export function OrganizerDashboard() {
         {/* CABEÇALHO E KPIs */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-black text-gray-900">Visão Geral da sua Gestão</h1>
-            <p className="text-gray-500 mt-2">Acompanhe seus resultados e publique novos shows para o seu público.</p>
+            <h1 className="text-3xl font-black text-gray-900">Olá, {firstName}! 👋</h1>
+            <p className="text-gray-500 mt-2">Bem-vindo ao seu painel de gestão. Aqui você acompanha as vendas e gerencia seus shows cadastrados.</p>
           </div>
           <Button onClick={() => navigate('/organizador/novo-evento')} className="shadow-md h-12 px-6 text-lg">
             ➕ Publicar Novo Evento
