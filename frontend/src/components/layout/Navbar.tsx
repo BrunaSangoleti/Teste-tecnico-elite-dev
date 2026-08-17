@@ -20,9 +20,14 @@ export function Navbar() {
                         {isAuthenticated ? (
                             <>
                                 {user?.role === 'ORGANIZADOR' && (
-                                    <Link to="/organizador/eventos" className="text-sm font-medium text-gray-700 hover:text-primary-600">
-                                        Meus Eventos (Painel)
-                                    </Link>
+                                    <>
+                                        <Link to="/organizador/eventos" className="text-sm font-medium text-gray-700 hover:text-primary-600">
+                                            Dashboard
+                                        </Link>
+                                        <Link to="/organizador/novo-evento" className="text-sm font-medium text-primary-600 hover:text-primary-700">
+                                            Novo Evento
+                                        </Link>
+                                    </>
                                 )}
                                 {user?.role === 'CLIENTE' && (
                                     <Link to="/meus-ingressos" className="text-sm font-medium text-gray-700 hover:text-primary-600">

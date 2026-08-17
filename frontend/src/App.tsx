@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { OrganizerDashboard } from './pages/OrganizerDashboard';
+import { CreateEvent } from './pages/CreateEvent';
 import { EventDetails } from './pages/EventDetails';
 import { Checkout } from './pages/Checkout';
 import { MyTickets } from './pages/MyTickets';
@@ -17,10 +18,11 @@ function PrivateRoute({ children, allowedRole }: { children: ReactNode, allowedR
   return <>{children}</>;
 }
 
-// Impede que o usuário PORTARIA acesse telas de eventos (redireciona para o app dele)
-function BlockPortariaRoute({ children }: { children: ReactNode }) {
+// Impede que usuários com roles restritas (PORTARIA, ORGANIZADOR) acessem a área de clientes
+function BlockRestrictedRolesRoute({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   if (user?.role === 'PORTARIA') return <Navigate to="/portaria" />;
+  if (user?.role === 'ORGANIZADOR') return <Navigate to="/organizador/eventos" />;
   return <>{children}</>;
 }
 
@@ -29,14 +31,19 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<BlockPortariaRoute><Home /></BlockPortariaRoute>} />
-          <Route path="/evento/:id" element={<BlockPortariaRoute><EventDetails /></BlockPortariaRoute>} />
+          <Route path="/" element={<BlockRestrictedRolesRoute><Home /></BlockRestrictedRolesRoute>} />
+          <Route path="/evento/:id" element={<BlockRestrictedRolesRoute><EventDetails /></BlockRestrictedRolesRoute>} />
           <Route path="/login" element={<Login />} />
 
-          {/* Rota protegida, só ORGANIZADOR pode acessar */}
+          {/* Rotas protegidas para ORGANIZADOR */}
           <Route path="/organizador/eventos" element={
             <PrivateRoute allowedRole="ORGANIZADOR">
               <OrganizerDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/organizador/novo-evento" element={
+            <PrivateRoute allowedRole="ORGANIZADOR">
+              <CreateEvent />
             </PrivateRoute>
           } />
 
