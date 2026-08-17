@@ -88,88 +88,130 @@ export function EventDetails() {
     }
   };
 
-  if (loading) return <div className="text-center p-20">Carregando detalhes...</div>;
-  if (!event) return <div className="text-center p-20">Evento não encontrado.</div>;
+  if (loading) return <div className="text-center p-20 text-gray-500 font-medium">Carregando detalhes do evento...</div>;
+  if (!event) return <div className="text-center p-20 text-red-500 font-medium">Evento não encontrado.</div>;
 
   const availableSpots = event.capacity - event.soldCount;
+  const noSeatsConfigured = event.seatMapEnabled && seats.length === 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <main className="flex-grow max-w-4xl mx-auto w-full px-4 py-8">
-        <Card noPadding className="overflow-hidden">
-          <div className="h-64 bg-gray-800 w-full relative flex items-center justify-center">
-            <h1 className="text-4xl font-bold text-white z-10">{event.title}</h1>
-            <div className="absolute inset-0 bg-black opacity-40"></div>
+        <Card noPadding className="overflow-hidden shadow-lg border border-gray-200">
+          <div className="h-72 w-full relative flex items-end p-8 bg-gray-900">
+            {event.imageUrl && (
+              <img src={event.imageUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
+            <h1 className="text-4xl md:text-5xl font-black text-white z-10 drop-shadow-md">{event.title}</h1>
           </div>
 
           <div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Informações</h2>
-              <div className="space-y-3 text-gray-600">
-                <p>📍 <strong>Local:</strong> {event.venueName}</p>
-                <p>📅 <strong>Data:</strong> {new Date(event.eventDate).toLocaleString('pt-BR')}</p>
-                <p>💰 <strong>Preço:</strong> R$ {event.price.toFixed(2)}</p>
-                <div className="mt-6 inline-block bg-primary-50 text-primary-700 px-4 py-2 rounded-lg font-medium border border-primary-100">
-                  {event.seatMapEnabled ? 'Escolha seu assento no mapa.' : `Restam apenas ${availableSpots} ingressos!`}
+              <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wide">Informações do Show</h2>
+              <div className="space-y-4 text-gray-700">
+                <p className="flex items-center gap-3">
+                  <span className="text-2xl">📍</span> 
+                  <span><strong>Local:</strong> {event.venueName}</span>
+                </p>
+                <p className="flex items-center gap-3">
+                  <span className="text-2xl">📅</span> 
+                  <span><strong>Data:</strong> {new Date(event.eventDate).toLocaleString('pt-BR')}</span>
+                </p>
+                <p className="flex items-center gap-3">
+                  <span className="text-2xl">💎</span> 
+                  <span><strong>Preço do Ingresso:</strong> R$ {event.price.toFixed(2).replace('.', ',')}</span>
+                </p>
+                <div className="mt-8 p-4 bg-primary-50 rounded-xl border border-primary-100 flex items-start gap-3">
+                  <span className="text-xl">💡</span>
+                  <p className="text-primary-800 text-sm font-medium">
+                    {event.seatMapEnabled 
+                      ? 'Este evento possui lugares marcados. Escolha seu assento exato para garantir a melhor visão!'
+                      : `Restam apenas ${availableSpots} ingressos para este lote. Não fique de fora!`}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 flex flex-col justify-center">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Garanta seu lugar</h3>
+            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
+              <h3 className="text-xl font-black text-gray-900 mb-6 text-center">Garanta sua entrada</h3>
               
               {user?.role === 'ORGANIZADOR' || user?.role === 'PORTARIA' ? (
-                <div className="text-center text-red-600 p-4 border border-red-200 rounded-lg bg-red-50">
+                <div className="text-center text-orange-700 p-4 border border-orange-200 rounded-xl bg-orange-50">
                   <p className="font-bold">Acesso restrito</p>
-                  <p className="text-sm mt-1">Sua conta ({user.role}) não permite fazer reservas. Entre como CLIENTE.</p>
+                  <p className="text-sm mt-1">Contas gerenciais não podem reservar ingressos. Entre com uma conta de Cliente.</p>
                 </div>
               ) : availableSpots > 0 || event.seatMapEnabled ? (
                 <>
                   {event.seatMapEnabled ? (
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Selecione um Assento (Setor - Fila/Número)</label>
-                      <select 
-                        className="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary-500 focus:border-primary-500"
-                        value={selectedSeat || ''}
-                        onChange={e => setSelectedSeat(e.target.value)}
-                      >
-                        <option value="">-- Escolha --</option>
-                        {seats.map(seat => (
-                          <option key={seat.id} value={seat.id} disabled={seat.status !== 'AVAILABLE'}>
-                            {seat.sector} - Fileira {seat.row} / N {seat.number} {seat.status !== 'AVAILABLE' ? '(Indisponível)' : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Selecione o Assento Desejado</label>
+                      {noSeatsConfigured ? (
+                        <div className="p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg border border-red-100 text-center">
+                          Atenção: O mapa de assentos ainda não foi liberado pela organização.
+                        </div>
+                      ) : (
+                        <select 
+                          className="w-full h-12 border-gray-300 rounded-xl shadow-sm px-4 border focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow bg-gray-50 text-gray-900"
+                          value={selectedSeat || ''}
+                          onChange={e => setSelectedSeat(e.target.value)}
+                        >
+                          <option value="">-- Escolha um assento --</option>
+                          {seats.map(seat => (
+                            <option key={seat.id} value={seat.id} disabled={seat.status !== 'AVAILABLE'}>
+                              {seat.sector} - Fila {seat.row} / Poltrona {seat.number} {seat.status !== 'AVAILABLE' ? '(Indisponível)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      
+                      {!selectedSeat && !noSeatsConfigured && (
+                        <p className="text-xs text-orange-600 font-medium mt-2">
+                          * É obrigatório selecionar um assento para prosseguir com a compra.
+                        </p>
+                      )}
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center space-x-4 mb-6">
-                      <button 
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-200"
-                      >-</button>
-                      <span className="text-2xl font-bold">{quantity}</span>
-                      <button 
-                        onClick={() => setQuantity(Math.min(availableSpots, quantity + 1))}
-                        className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-200"
-                      >+</button>
+                    <div className="mb-6">
+                      <label className="block text-sm font-bold text-gray-700 mb-4 text-center">Quantidade de Ingressos</label>
+                      <div className="flex items-center justify-center space-x-6">
+                        <button 
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center hover:bg-gray-100 hover:border-gray-300 transition-colors text-xl font-medium text-gray-600"
+                        >-</button>
+                        <span className="text-3xl font-black text-gray-900 w-8 text-center">{quantity}</span>
+                        <button 
+                          onClick={() => setQuantity(Math.min(availableSpots, quantity + 1))}
+                          className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center hover:bg-gray-100 hover:border-gray-300 transition-colors text-xl font-medium text-gray-600"
+                        >+</button>
+                      </div>
+                      <p className="text-xs text-gray-500 font-medium mt-4 text-center">
+                        Você pode selecionar até {availableSpots} ingressos nesta compra.
+                      </p>
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center mb-6 text-sm text-gray-500">
-                    <span>Total a pagar:</span>
-                    <span className="text-xl font-bold text-gray-900">
-                      R$ {(event.price * (event.seatMapEnabled ? (selectedSeat ? 1 : 0) : quantity)).toFixed(2)}
+                  <div className="flex justify-between items-center mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-sm font-bold text-gray-500 uppercase tracking-wide">Total a pagar</span>
+                    <span className="text-2xl font-black text-primary-600">
+                      R$ {(event.price * (event.seatMapEnabled ? (selectedSeat ? 1 : 0) : quantity)).toFixed(2).replace('.', ',')}
                     </span>
                   </div>
 
-                  <Button fullWidth onClick={handleReserve} isLoading={reserving} disabled={event.seatMapEnabled && !selectedSeat}>
-                    Reservar Agora
+                  <Button 
+                    fullWidth 
+                    className="h-14 text-lg shadow-md"
+                    onClick={handleReserve} 
+                    isLoading={reserving} 
+                    disabled={(event.seatMapEnabled && !selectedSeat) || noSeatsConfigured}
+                  >
+                    Confirmar Reserva
                   </Button>
                 </>
               ) : (
-                <div className="text-center text-red-500 font-bold text-xl py-4">
-                  ESGOTADO
+                <div className="text-center text-red-600 font-black text-2xl py-8 bg-red-50 rounded-xl border border-red-200">
+                  INGRESSOS ESGOTADOS
                 </div>
               )}
             </div>
