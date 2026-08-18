@@ -65,6 +65,16 @@ export function MyTickets() {
                   <span className={`mt-4 px-3 py-1 text-xs font-bold rounded-full border ${ticket.status === 'VALID' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-200 text-gray-600 border-gray-300'}`}>
                     {ticket.status === 'VALID' ? 'VÁLIDO' : 'UTILIZADO'}
                   </span>
+                  
+                  {/* Código Manual para Portaria */}
+                  <div className="mt-4 w-full flex flex-col items-center border-t border-gray-100 pt-3">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 text-center">
+                      CÓDIGO MANUAL (PORTARIA)
+                    </span>
+                    <code className="text-[10px] sm:text-xs font-mono font-bold text-gray-800 bg-gray-100 border border-gray-200 px-2 py-1 rounded w-full text-center break-all select-all">
+                      {ticket.id}
+                    </code>
+                  </div>
                 </div>
                 
                 {/* Detalhes do Evento */}

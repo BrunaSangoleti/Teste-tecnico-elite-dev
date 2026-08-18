@@ -48,6 +48,13 @@ export function SharedTicket() {
             {ticket.status === 'VALID' ? 'Acesso Válido' : 'Ingresso Utilizado'}
           </h3>
           <p className="text-gray-500 mt-2 text-center text-sm">Este é um link público de visualização do ingresso.</p>
+          
+          <div className="mt-6 w-full max-w-[250px] bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">CÓDIGO MANUAL (PORTARIA)</p>
+            <code className="text-xs font-mono font-bold text-gray-800 break-all select-all">
+              {ticket.id}
+            </code>
+          </div>
         </div>
 
         <div className="bg-gray-50 p-6">

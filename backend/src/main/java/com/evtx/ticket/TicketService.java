@@ -58,13 +58,19 @@ public class TicketService {
     @Transactional
     public ValidateTicketResponse validate(String code, UUID eventId) {
 
-        // 1. Verifica a assinatura HMAC do QR Token
+        // 1. Verifica a assinatura HMAC do QR Token ou validação manual via ID (36 caracteres)
         UUID ticketId;
         try {
-            ticketId = qrCodeService.verifyAndExtractTicketId(code);
+            if (code.length() == 36) {
+                // Entrada manual do porteiro (Ticket ID)
+                ticketId = UUID.fromString(code);
+            } else {
+                // Leitura do QR Code via Câmera (JWT)
+                ticketId = qrCodeService.verifyAndExtractTicketId(code);
+            }
         } catch (IllegalArgumentException e) {
             return new ValidateTicketResponse("INVALIDO",
-                    "QR Code inválido ou adulterado.");
+                    "QR Code ou Código Manual inválido/adulterado.");
         }
 
         // 2. Busca o ingresso no banco
