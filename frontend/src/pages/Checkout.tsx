@@ -33,17 +33,22 @@ export function Checkout() {
       const cleanCardNumber = cardNumber.replace(/\s/g, '');
 
       // Chamada real da API de pagamentos
-      await api.post(`/payments/${reservationId}/pay`, { 
+      const response = await api.post(`/payments/${reservationId}/pay`, { 
         method: 'CREDIT_CARD',
         cardNumber: cleanCardNumber, 
         expiry, 
         cvv, 
         name 
       });
-      
-      setStatusFeedback('SUCCESS');
-      // Após 2 segundos do sucesso, joga o usuário pra tela de "Meus Ingressos"
-      setTimeout(() => navigate('/meus-ingressos'), 2500);
+
+      // Defesa em profundidade: verifica o status no body da resposta
+      if (response.data.status === 'DECLINED') {
+        setStatusFeedback('DECLINED');
+      } else {
+        setStatusFeedback('SUCCESS');
+        // Após 2 segundos do sucesso, joga o usuário pra tela de "Meus Ingressos"
+        setTimeout(() => navigate('/meus-ingressos'), 2500);
+      }
 
     } catch (err: any) {
       setStatusFeedback('DECLINED');
