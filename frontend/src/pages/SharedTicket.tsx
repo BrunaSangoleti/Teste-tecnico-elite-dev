@@ -37,7 +37,7 @@ export function SharedTicket() {
         
         <div className="p-8 flex flex-col items-center border-b border-gray-100 border-dashed">
           <img 
-            src={`http://localhost:8081/api/tickets/${ticket.id}/qrcode`} 
+            src={`${api.defaults.baseURL}/tickets/${ticket.id}/qrcode`} 
             alt="QR Code do Ingresso" 
             className={`w-48 h-48 mb-6 ${ticket.status === 'USED' ? 'grayscale opacity-50' : ''}`}
             onError={(e) => {

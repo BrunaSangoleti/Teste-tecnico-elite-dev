@@ -55,7 +55,7 @@ export function MyTickets() {
                 {/* Lateral com QR Code */}
                 <div className={`p-5 sm:w-48 flex flex-col items-center justify-center border-b sm:border-b-0 sm:border-r border-gray-100 ${ticket.status === 'VALID' ? 'bg-primary-50/30' : 'bg-gray-100'}`}>
                   <img 
-                    src={`http://localhost:8081/api/tickets/${ticket.id}/qrcode`} 
+                    src={`${api.defaults.baseURL}/tickets/${ticket.id}/qrcode`} 
                     alt="QR Code do Ingresso" 
                     className={`w-32 h-32 rounded-lg ${ticket.status === 'USED' ? 'grayscale opacity-50' : 'shadow-sm'}`}
                     onError={(e) => {
