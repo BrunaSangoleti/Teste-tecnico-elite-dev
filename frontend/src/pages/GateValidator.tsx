@@ -63,7 +63,8 @@ export function GateValidator() {
   }, [scannedCode]);
 
   const isValidUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    // Regex flexibilizado para aceitar UUIDs mockados como '55555555-5555-5555-5555-555555555555'
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return regex.test(uuid);
   };
 
