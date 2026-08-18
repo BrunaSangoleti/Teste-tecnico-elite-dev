@@ -90,7 +90,7 @@ export function CreateEvent() {
     try {
       const payload = {
         ...data,
-        seatMapEnabled: true,
+        seatMapEnabled: false,
         imageUrl: selectedCatalogItem?.imageUrl || null,
         eventDate: new Date(data.eventDate).toISOString()
       };
