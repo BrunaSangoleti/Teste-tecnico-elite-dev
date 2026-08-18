@@ -128,7 +128,10 @@ export function CreateEvent() {
               <select 
                 className="w-full h-11 px-4 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none"
                 value={searchStyle}
-                onChange={e => setSearchStyle(e.target.value)}
+                onChange={e => {
+                  setSearchStyle(e.target.value);
+                  setSearchQuery(''); // Se escolheu categoria, limpa a busca por nome
+                }}
               >
                 <option value="">Selecione um estilo musical...</option>
                 <option value="Rock">🎸 Rock</option>
@@ -147,7 +150,10 @@ export function CreateEvent() {
                 label="" 
                 placeholder="Qual o nome da banda ou artista? (Opcional)" 
                 value={searchQuery} 
-                onChange={e => setSearchQuery(e.target.value)} 
+                onChange={e => {
+                  setSearchQuery(e.target.value);
+                  setSearchStyle(''); // Se digitou nome, limpa a categoria
+                }} 
               />
             </div>
             <Button type="submit" isLoading={searching} className="md:w-48 h-11">
