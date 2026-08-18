@@ -34,6 +34,10 @@ export interface Reservation {
 export interface Ticket {
   id: string;
   eventId: string;
+  eventTitle?: string;
+  venueName?: string;
+  eventDate?: string;
+  imageUrl?: string;
   reservationId: string;
   qrToken: string;
   shareToken: string;

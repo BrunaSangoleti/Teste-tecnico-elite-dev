@@ -51,38 +51,66 @@ export function MyTickets() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tickets.map(ticket => (
-              <Card key={ticket.id} className={`flex flex-col sm:flex-row overflow-hidden ${ticket.status === 'USED' ? 'opacity-60' : ''}`} noPadding>
-                <div className="bg-white p-6 border-b sm:border-b-0 sm:border-r border-gray-200 flex flex-col items-center justify-center min-w-[200px]">
-                  {/* Agora buscamos o QR Code real vindo do nosso backend em PNG */}
+              <Card key={ticket.id} className={`flex flex-col sm:flex-row overflow-hidden hover:shadow-lg transition-shadow border-gray-200 ${ticket.status === 'USED' ? 'opacity-70 bg-gray-50' : 'bg-white'}`} noPadding>
+                {/* Lateral com QR Code */}
+                <div className={`p-5 sm:w-48 flex flex-col items-center justify-center border-b sm:border-b-0 sm:border-r border-gray-100 ${ticket.status === 'VALID' ? 'bg-primary-50/30' : 'bg-gray-100'}`}>
                   <img 
                     src={`http://localhost:8081/api/tickets/${ticket.id}/qrcode`} 
                     alt="QR Code do Ingresso" 
-                    className={`w-32 h-32 ${ticket.status === 'USED' ? 'grayscale' : ''}`}
+                    className={`w-32 h-32 rounded-lg ${ticket.status === 'USED' ? 'grayscale opacity-50' : 'shadow-sm'}`}
                     onError={(e) => {
-                      // Caso dê erro ao carregar a imagem ou precise do token, recai pro gerador externo
                       e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${ticket.qrToken || ticket.id}`;
                     }}
                   />
-                  <span className={`mt-4 px-3 py-1 text-xs font-bold rounded-full ${ticket.status === 'VALID' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'}`}>
+                  <span className={`mt-4 px-3 py-1 text-xs font-bold rounded-full border ${ticket.status === 'VALID' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-200 text-gray-600 border-gray-300'}`}>
                     {ticket.status === 'VALID' ? 'VÁLIDO' : 'UTILIZADO'}
                   </span>
                 </div>
                 
-                <div className="p-6 flex flex-col justify-between w-full">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">Ingresso #{ticket.id.substring(0,8)}</h3>
-                    <p className="text-sm text-gray-500 mt-1">Evento: {ticket.eventId}</p>
-                  </div>
+                {/* Detalhes do Evento */}
+                <div className="flex flex-col flex-grow">
+                  {ticket.imageUrl && (
+                    <div className="h-24 w-full bg-gray-200 overflow-hidden relative">
+                       <img src={ticket.imageUrl} alt={ticket.eventTitle || 'Evento'} className="w-full h-full object-cover" />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    </div>
+                  )}
                   
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Link de Compartilhamento:</p>
-                    <a 
-                      href={`/ingresso/${ticket.shareToken}`} 
-                      target="_blank" 
-                      className="text-sm text-primary-600 truncate block hover:underline"
-                    >
-                      Ver ingresso público
-                    </a>
+                  <div className="p-5 flex flex-col flex-grow justify-between">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                          {ticket.eventTitle || 'Evento Sem Título'}
+                        </h3>
+                      </div>
+                      
+                      <div className="mt-3 space-y-2">
+                        {ticket.eventDate && (
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <span className="mr-2">⏰</span>
+                            <span className="font-medium">{new Date(ticket.eventDate).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+                          </p>
+                        )}
+                        {ticket.venueName && (
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <span className="mr-2">📍</span>
+                            <span>{ticket.venueName}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <p className="text-xs text-gray-400 font-mono">ID: {ticket.id.substring(0,8)}...</p>
+                      <a 
+                        href={`/ingresso/${ticket.shareToken}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline flex items-center"
+                      >
+                        Ver ingresso público &rarr;
+                      </a>
+                    </div>
                   </div>
                 </div>
               </Card>

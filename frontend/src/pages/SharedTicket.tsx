@@ -25,19 +25,48 @@ export function SharedTicket() {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <Card noPadding className="w-full max-w-sm overflow-hidden bg-white shadow-2xl">
-        <div className="bg-primary-600 p-6 text-center text-white">
-          <h2 className="text-2xl font-bold">Elite Tickets</h2>
-          <p className="text-primary-100 text-sm mt-1">Ingresso Oficial</p>
+        <div className="bg-primary-600 p-6 text-center text-white relative">
+          {ticket.imageUrl && (
+            <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: `url(${ticket.imageUrl})` }}></div>
+          )}
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold">{ticket.eventTitle || 'Elite Tickets'}</h2>
+            <p className="text-primary-100 text-sm mt-1">Ingresso Oficial Público</p>
+          </div>
         </div>
         
-        <div className="p-8 flex flex-col items-center">
+        <div className="p-8 flex flex-col items-center border-b border-gray-100 border-dashed">
           <img 
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.qrToken || ticket.id}`} 
-            alt="QR Code" 
-            className="w-48 h-48 mb-6"
+            src={`http://localhost:8081/api/tickets/${ticket.id}/qrcode`} 
+            alt="QR Code do Ingresso" 
+            className={`w-48 h-48 mb-6 ${ticket.status === 'USED' ? 'grayscale opacity-50' : ''}`}
+            onError={(e) => {
+              e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.qrToken || ticket.id}`;
+            }}
           />
-          <h3 className="text-xl font-bold text-gray-900 text-center">Acesso Liberado</h3>
-          <p className="text-gray-500 mt-2 text-center text-sm">Este é um link público somente-leitura do ingresso.</p>
+          <h3 className="text-xl font-bold text-gray-900 text-center">
+            {ticket.status === 'VALID' ? 'Acesso Válido' : 'Ingresso Utilizado'}
+          </h3>
+          <p className="text-gray-500 mt-2 text-center text-sm">Este é um link público de visualização do ingresso.</p>
+        </div>
+
+        <div className="bg-gray-50 p-6">
+          <div className="space-y-3">
+            {ticket.eventDate && (
+              <div className="flex items-start">
+                <span className="text-gray-400 mr-3">⏰</span>
+                <p className="text-sm text-gray-800 font-medium">
+                  {new Date(ticket.eventDate).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            )}
+            {ticket.venueName && (
+              <div className="flex items-start">
+                <span className="text-gray-400 mr-3">📍</span>
+                <p className="text-sm text-gray-800 font-medium">{ticket.venueName}</p>
+              </div>
+            )}
+          </div>
         </div>
       </Card>
       
