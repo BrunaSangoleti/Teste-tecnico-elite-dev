@@ -34,7 +34,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Reservation not found: " + reservationId));
 
-        if (paymentRepository.findByReservationId(reservationId).isPresent()) {
+        if (paymentRepository.findByReservationIdAndStatus(reservationId, PaymentStatus.APPROVED).isPresent()) {
             throw new ConflictException("This reservation has already been paid.");
         }
 
@@ -46,12 +46,15 @@ public class PaymentService {
         boolean approved = !request.cardNumber().endsWith("0000");
         PaymentStatus paymentStatus = approved ? PaymentStatus.APPROVED : PaymentStatus.DECLINED;
 
-        Payment payment = Payment.builder()
-                .reservation(reservation)
-                .status(paymentStatus)
-                .simulatedMethod(request.method())
-                .processedAt(Instant.now())
-                .build();
+        Payment payment = paymentRepository.findByReservationId(reservationId)
+                .orElseGet(() -> Payment.builder()
+                        .reservation(reservation)
+                        .build());
+
+        payment.setStatus(paymentStatus);
+        payment.setSimulatedMethod(request.method());
+        payment.setProcessedAt(Instant.now());
+
         paymentRepository.save(payment);
 
         if (approved) {
@@ -68,18 +71,7 @@ public class PaymentService {
                     "Payment approved. Your tickets have been issued.");
 
         } else {
-            reservation.setStatus(ReservationStatus.DECLINED);
-
-            if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled()) && !reservation.getSeats().isEmpty()) {
-                reservation.getSeats().forEach(s -> seatRepository.releaseReservation(s.getId()));
-                eventRepository.releaseQuantity(reservation.getEvent().getId(), reservation.getSeats().size());
-            } else if (reservation.getQuantity() != null) {
-                eventRepository.releaseQuantity(
-                        reservation.getEvent().getId(), reservation.getQuantity());
-            }
-
-            reservationRepository.save(reservation);
-
+            // Mantém a reserva intacta (PENDING_PAYMENT) para permitir novas tentativas de pagamento
             return new PaymentResponse("DECLINED",
                     "Payment declined. Please check your card details.");
         }

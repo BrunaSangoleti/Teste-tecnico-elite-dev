@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByReservationId(UUID reservationId);
+    Optional<Payment> findByReservationIdAndStatus(UUID reservationId, PaymentStatus status);
 }
