@@ -115,13 +115,15 @@ export function Checkout() {
                       placeholder="12/30" 
                       value={expiry} 
                       onChange={e => {
-                        // Se o usuário estiver apagando, deixamos fluir naturalmente sem forçar a máscara
-                        if ((e.nativeEvent as any).inputType === 'deleteContentBackward') {
-                          setExpiry(e.target.value);
+                        let inputVal = e.target.value;
+                        
+                        // Se o tamanho diminuiu, é porque apagou algo. Não forçamos a máscara.
+                        if (inputVal.length < expiry.length) {
+                          setExpiry(inputVal);
                           return;
                         }
 
-                        let val = e.target.value.replace(/\D/g, '');
+                        let val = inputVal.replace(/\D/g, '');
                         
                         // Se o primeiro dígito for maior que 1 (ex: 2 a 9), adiciona um zero e já bota a barra
                         if (val.length === 1 && parseInt(val) > 1) {
