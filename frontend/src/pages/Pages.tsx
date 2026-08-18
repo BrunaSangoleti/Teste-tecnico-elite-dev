@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import { Event } from '../types';
+import type { Event } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Navbar } from '../components/layout/Navbar';

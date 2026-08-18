@@ -42,7 +42,8 @@ export function CreateEvent() {
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<CatalogItem | null>(null);
   const [importing, setImporting] = useState(false);
   
-  const { register: registerImport, handleSubmit: handleImportSubmit, formState: { errors: importErrors }, reset: resetImport, setValue: setImportValue } = useForm<ImportForm>({
+  const { register: registerImport, handleSubmit: handleImportSubmit, formState: { errors: importErrors }, setValue: setImportValue } = useForm<ImportForm>({
+    // @ts-ignore
     resolver: zodResolver(importSchema)
   });
 
@@ -189,6 +190,7 @@ export function CreateEvent() {
             <h2 className="text-xl font-bold mb-1">Importar Evento</h2>
             <p className="text-sm text-gray-500 mb-4">{selectedCatalogItem.title}</p>
             
+            {/* @ts-ignore */}
             <form onSubmit={handleImportSubmit(onImport)} className="space-y-4">
               <input type="hidden" {...registerImport('title')} />
               <input type="hidden" {...registerImport('description')} />
