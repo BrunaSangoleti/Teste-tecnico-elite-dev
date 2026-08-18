@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // URL do backend Java Spring Boot (altere se precisar)
 export const api = axios.create({
-  baseURL: 'https://teste-tecnico-elite-dev.onrender.com/api', 
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api', 
 });
 
 // Interceptor: antes de enviar qualquer chamada, injeta o token
