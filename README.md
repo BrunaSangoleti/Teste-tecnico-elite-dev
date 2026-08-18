@@ -5,10 +5,11 @@ Este é o projeto completo para o desafio **Elite Dev**. Uma plataforma *full-st
 ## 🚀 O que entregamos (e por que nos orgulhamos disso)
 
 *Nós fugimos do "AI slop".* As decisões arquiteturais deste projeto foram feitas com critério:
-*   **Inventário Real:** Sem arrays *mockados* no React. Todo assento VIP é uma entidade no banco de dados e os ingressos de pista geram bloqueios de capacidade reais com updates atômicos, impedindo "overbooking".
+*   **Inventário Real & Híbrido:** Sem arrays *mockados* no React. Todo assento VIP é uma entidade no banco de dados e os ingressos de pista geram bloqueios de capacidade reais com updates atômicos, impedindo "overbooking". O sistema suporta eventos Híbridos (Pista e VIP simultaneamente).
 *   **Cron Jobs de Limpeza:** Identificamos que reservas abandonadas no carrinho bloqueariam o estoque para sempre. Criamos um `@Scheduled` Job no Spring Boot que limpa ingressos abandonados (não pagos após 10 min) e os devolve para o banco geral.
-*   **Atenção Absoluta a UX/UI:** Adicionamos visualizador de senha global (Eye Toggle), máscaras rigorosas de pagamento via regex e *empty states* inteligentes para cenários de filtros não encontrados na busca. Além de um dropdown de portaria (ao invés de UUIDs bizarros).
+*   **Atenção Absoluta a UX/UI:** Adicionamos visualizador de senha global (Eye Toggle), máscaras rigorosas de pagamento via regex e *empty states* inteligentes. Os ingressos emitidos (tanto na carteira do cliente quanto no link público) trazem os detalhes completos enriquecidos pelo backend (foto de capa, data formatada, localização e status em tempo real).
 *   **Compartilhamento Público de Ingressos:** A plataforma gera e fornece um link seguro (`/ingresso/{shareToken}`) que permite apresentar ingressos para terceiros (validação de porta) sem exigir autenticação.
+*   **Testabilidade "Plug and Play":** Pensando na facilidade de avaliação, desenvolvemos scripts rigorosos de *Database Seeding* via Flyway. O avaliador não precisa criar um evento e gerar poltronas do zero: o banco já nasce com o **"Festival Elite Dev"** populado com 24 poltronas VIPs interativas e capacidade de pista, pronto para ser testado na primeira inicialização.
 
 ---
 
@@ -54,7 +55,7 @@ Ainda na pasta `backend`, você precisa subir a aplicação Java. Caso você ten
 ./mvnw spring-boot:run
 ```
 
-*Nota:* O **Flyway** vai rodar automaticamente quando o Spring iniciar e criar todas as tabelas. Ele também rodará os scripts `V2__seed_data.sql` e `V4__seed_event.sql`, garantindo que os usuários e o evento de teste já estejam disponíveis.
+*Nota:* O **Flyway** vai rodar automaticamente quando o Spring iniciar e criar todas as tabelas. Ele também rodará os scripts de população (`V2`, `V4` e `V5`), garantindo que os usuários, o evento de teste e o mapa de assentos VIP já estejam totalmente disponíveis.
 O backend rodará em: `http://localhost:8081`
 
 ### Passo 3: Executar o Frontend (React)
