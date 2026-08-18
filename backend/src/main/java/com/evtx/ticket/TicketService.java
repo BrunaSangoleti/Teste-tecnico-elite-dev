@@ -57,11 +57,15 @@ public class TicketService {
 
     @Transactional
     public ValidateTicketResponse validate(String code, UUID eventId) {
+        
+        if (code != null) {
+            code = code.trim();
+        }
 
         // 1. Verifica a assinatura HMAC do QR Token ou validação manual via ID (36 caracteres)
         UUID ticketId;
         try {
-            if (code.length() == 36) {
+            if (code != null && code.length() == 36) {
                 // Entrada manual do porteiro (Ticket ID)
                 ticketId = UUID.fromString(code);
             } else {
