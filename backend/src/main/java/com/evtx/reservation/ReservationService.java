@@ -55,6 +55,12 @@ public class ReservationService {
                 reservedSeats.add(seat);
             }
 
+            // IMPORTANTE: Qualquer ingresso consome a capacidade geral do evento
+            int affectedQty = eventRepository.tryReserveQuantity(event.getId(), reservedSeats.size());
+            if (affectedQty == 0) {
+                throw new ConflictException("Not enough capacity in the event.");
+            }
+
             BigDecimal totalAmount = event.getPrice()
                     .multiply(BigDecimal.valueOf(request.seatIds().size()));
 
@@ -115,9 +121,10 @@ public class ReservationService {
         for (Reservation reservation : expired) {
             reservation.setStatus(ReservationStatus.EXPIRED);
 
-            if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled())) {
+            if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled()) && !reservation.getSeats().isEmpty()) {
                 reservation.getSeats().forEach(s -> seatRepository.releaseReservation(s.getId()));
-            } else {
+                eventRepository.releaseQuantity(reservation.getEvent().getId(), reservation.getSeats().size());
+            } else if (reservation.getQuantity() != null) {
                 eventRepository.releaseQuantity(
                         reservation.getEvent().getId(), reservation.getQuantity());
             }

@@ -70,9 +70,10 @@ public class PaymentService {
         } else {
             reservation.setStatus(ReservationStatus.DECLINED);
 
-            if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled())) {
+            if (Boolean.TRUE.equals(reservation.getEvent().getSeatMapEnabled()) && !reservation.getSeats().isEmpty()) {
                 reservation.getSeats().forEach(s -> seatRepository.releaseReservation(s.getId()));
-            } else {
+                eventRepository.releaseQuantity(reservation.getEvent().getId(), reservation.getSeats().size());
+            } else if (reservation.getQuantity() != null) {
                 eventRepository.releaseQuantity(
                         reservation.getEvent().getId(), reservation.getQuantity());
             }
