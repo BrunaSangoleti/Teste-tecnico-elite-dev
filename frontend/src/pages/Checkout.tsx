@@ -116,9 +116,21 @@ export function Checkout() {
                       value={expiry} 
                       onChange={e => {
                         let val = e.target.value.replace(/\D/g, '');
-                        if (val.length >= 2) {
-                          val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                        
+                        // Se o primeiro dígito for maior que 1 (ex: 2 a 9), adiciona um zero na frente (ex: 02)
+                        if (val.length === 1 && parseInt(val) > 1) {
+                          val = '0' + val;
                         }
+                        
+                        if (val.length >= 2) {
+                          let month = parseInt(val.substring(0, 2), 10);
+                          if (month > 12) month = 12; // Trava o máximo em 12
+                          if (month === 0 && val.length > 1) month = 1; // Evita mês 00 (vira 01)
+                          
+                          let monthStr = month < 10 ? '0' + month : String(month);
+                          val = monthStr + '/' + val.substring(2, 4);
+                        }
+                        
                         setExpiry(val);
                       }} 
                       required 
